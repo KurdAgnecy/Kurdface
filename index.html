@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurd Face - كورد فەیس</title>
+    <!-- Tailwind CSS for modern & premium UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Noto Kufi Arabic', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        /* Custom scrollbar for beautiful styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden select-none">
+
+    <!-- Header Section -->
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Kurd Face</h1>
+                <p class="text-xs text-amber-500 font-medium">سۆفتوێری پێشکەوتووی دەستکاری دەموچاو</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <label for="imageUpload" class="cursor-pointer bg-gray-800 hover:bg-gray-700 transition px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 border border-gray-700">
+                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                بارکردنی وێنە
+            </label>
+            <input type="file" id="imageUpload" accept="image/*" class="hidden">
+            <button onclick="resetAll()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-lg transition border border-red-500/20" title="پاککردنەوەی هەموو مۆدیفیکەیشنەکان">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Side: Image Preview Frame -->
+        <div class="lg:col-span-7 xl:col-span-8 bg-gray-950 rounded-2xl border border-gray-800 p-4 h-[500px] md:h-[600px] flex flex-col justify-center items-center relative overflow-hidden shadow-inner bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+            <div id="imageWrapper" class="relative max-w-full max-h-full overflow-hidden rounded-xl transition-all duration-200 ease-out flex justify-center items-center">
+                <!-- Default Avatar Placeholder / Interactive Image Viewport -->
+                <img id="previewImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop" alt="Kurd Face Viewport" class="max-w-full max-h-[450px] md:h-[520px] object-contain transition-all duration-150 ease-out select-none pointer-events-none">
+                <!-- Live Dynamic CSS Makeup Overlays inside the DOM -->
+                <div id="lipstickOverlay" class="absolute inset-0 pointer-events-none mix-blend-multiply opacity-0 transition-all duration-300 rounded-xl" style="background: radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 25%);"></div>
+                <div id="blushOverlay" class="absolute inset-0 pointer-events-none mix-blend-color-burn opacity-0 transition-all duration-300 rounded-xl" style="background: radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 40%);"></div>
+            </div>
+            
+            <!-- Floating Image Info -->
+            <div class="absolute bottom-4 left-4 bg-gray-900/80 backdrop-blur text-xs px-3 py-1.5 rounded-full border border-gray-800 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-gray-400">سیستەمی ڕێندەری ڕاستەوخۆ جێگیرە</span>
+            </div>
+        </div>
+
+        <!-- Right Side: Advanced Controls Console -->
+        <div class="lg:col-span-5 xl:col-span-4 bg-gray-900/40 rounded-2xl border border-gray-800 flex flex-col overflow-hidden h-[600px]">
+            
+            <!-- Level 1 Menu: Core Category Selection (Face vs Makeup) -->
+            <div class="grid grid-cols-2 border-b border-gray-800 bg-gray-950 p-2 gap-2">
+                <button id="btnMainFace" onclick="switchMainMenu('face')" class="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10">
+                    <!-- Face Outline SVG -->
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10a6 6 0 0 0-12 0c0 4.97 4 9 9 9s9-4.03 9-9Z"/><path d="M12 10v4M9 11h.01M15 11h.01"/></svg>
+                    دەموچاو (Face)
+                </button>
+                <button id="btnMainMakeup" onclick="switchMainMenu('makeup')" class="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900">
+                    <!-- Makeup/Lipstick SVG -->
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a7 7 0 0 0 7 7Z"/><path d="M5 11h14M12 3v8"/></svg>
+                    مەیک ئەپ (Makeup)
+                </button>
+            </div>
+
+            <!-- Level 2 Sub-Menu: Specific Facial Structural Parts (Only visible under 'Face') -->
+            <div id="faceSubTabs" class="flex gap-2 overflow-x-auto p-3 bg-gray-950/60 border-b border-gray-800/80 scrollbar-none">
+                <button onclick="switchFaceSubTab('shape')" id="tab-shape" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path></svg>
+                    شێوە (Shape)
+                </button>
+                <button onclick="switchFaceSubTab('eyebrows')" id="tab-eyebrows" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9a2 2 0 01-2 2H6l-2-2m0 0l2-2h6a2 2 0 012 2z"></path></svg>
+                    برۆکان
+                </button>
+                <button onclick="switchFaceSubTab('eyes')" id="tab-eyes" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    چاوەکان
+                </button>
+                <button onclick="switchFaceSubTab('nose')" id="tab-nose" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v14m0 0a3 3 0 11-6 0m6 0a3 3 0 116 0"></path></svg>
+                    لوت
+                </button>
+                <button onclick="switchFaceSubTab('mouth')" id="tab-mouth" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8 8 8 0 018 8m-16 0h16M12 20a8 8 0 008-8m-8 8a8 8 0 01-8-8"></path></svg>
+                    دەم
+                </button>
+            </div>
+
+            <!-- Level 3 Control Panels Inside View Containers -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-5" id="controlsContainer">
+                <!-- Dynamically populated container via state managers -->
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer Branding Component -->
+    <footer class="border-t border-gray-800 bg-gray-950 py-3 px-6 text-center text-xs text-gray-500 tracking-wide">
+        <div>دروستکراوە بە <span class="text-red-500">♥️</span> لە لایەن <span class="text-amber-500 font-bold">کورد ئەجێنسی (Kurd Agency)</span></div>
+    </footer>
+
+    <!-- App Engineering core logic execution architecture -->
+    <script>
+        // Comprehensive Slider Structural Configuration State Archetype (Exact match to images)
+        const appState = {
+            currentMenu: 'face', // 'face' or 'makeup'
+            currentFaceSubTab: 'shape', // 'shape', 'eyebrows', 'eyes', 'nose', 'mouth'
+            sliders: {
+                // Face Subcategory Configurations
+                shape: {
+                    slim: { label: 'باریککردن (Slim)', val: 0, min: -30, max: 30, unit: '%' },
+                    width: { label: 'پانی دەموچاو (Width)', val: 0, min: -25, max: 25, unit: '%' },
+                    temples: { label: 'لاجانگ (Temples)', val: 0, min: -20, max: 20, unit: '%' },
+                    cheekbones: { label: 'کۆڵەکەی ڕوومەت (Cheekbones)', val: 0, min: -30, max: 30, unit: '%' },
+                    jaw: { label: 'شەویلگە (Jaw)', val: 0, min: -20, max: 20, unit: '%' },
+                    vshape: { label: 'شێوەی ڤی (V-Shape)', val: 0, min: 0, max: 40, unit: '%' },
+                    chin: { label: 'چەناگە (Chin)', val: 0, min: -25, max: 25, unit: '%' }
+                },
+                eyebrows: {
+                    thickness: { label: 'ئەستووری (Thickness)', val: 100, min: 50, max: 150, unit: '%' },
+                    length: { label: 'درێژی (Length)', val: 100, min: 70, max: 130, unit: '%' },
+                    lift: { label: 'بەرزکردنەوە (Lift)', val: 0, min: -20, max: 20, unit: 'px' },
+                    peak: { label: 'لوتکە (Peak)', val: 0, min: -15, max: 15, unit: 'px' },
+                    tilt: { label: 'لاربوونەوە (Tilt)', val: 0, min: -15, max: 15, unit: 'deg' },
+                    distance: { label: 'دووری نێوانیان (Distance)', val: 0, min: -20, max: 20, unit: 'px' }
+                },
+                eyes: {
+                    size: { label: 'قەبارەی چاو (Size)', val: 100, min: 80, max: 130, unit: '%' },
+                    lift: { label: 'بەرەو سەرەوە (Lift)', val: 0, min: -15, max: 15, unit: 'px' },
+                    height: { label: 'بەرزایی چاو (Height)', val: 100, min: 70, max: 130, unit: '%' },
+                    width: { label: 'پانی چاو (Width)', val: 100, min: 70, max: 130, unit: '%' },
+                    tilt: { label: 'لاربوونەوە (Tilt)', val: 0, min: -10, max: 10, unit: 'deg' },
+                    distance: { label: 'دووری چاوەکان (Distance)', val: 0, min: -25, max: 25, unit: 'px' },
+                    pupil: { label: 'بیلبیلی چاو (Pupil)', val: 100, min: 80, max: 140, unit: '%' }
+                },
+                nose: {
+                    size: { label: 'قەبارەی لوت (Size)', val: 100, min: 75, max: 125, unit: '%' },
+                    width: { label: 'پانی لوت (Width)', val: 100, min: 70, max: 130, unit: '%' },
+                    tip: { label: 'سەری لوت (Tip)', val: 0, min: -15, max: 15, unit: 'px' },
+                    wing: { label: 'باڵەکانی لوت (Wing)', val: 100, min: 80, max: 120, unit: '%' },
+                    bridge: { label: 'پردی لوت (Bridge)', val: 0, min: -10, max: 10, unit: 'px' },
+                    lift: { label: 'بەرزکردنەوەی لوت (Lift)', val: 0, min: -15, max: 15, unit: 'px' }
+                },
+                mouth: {
+                    size: { label: 'قەبارەی دەم (Size)', val: 100, min: 80, max: 125, unit: '%' },
+                    lift: { label: 'بەرەو سەرەوە (Lift)', val: 0, min: -15, max: 15, unit: 'px' },
+                    width: { label: 'پانی دەم (Width)', val: 100, min: 80, max: 120, unit: '%' },
+                    upperLip: { label: 'لێوی سەرەوە (Upper Lip)', val: 100, min: 70, max: 140, unit: '%' },
+                    lowerLip: { label: 'لێوی خوارەوە (Lower Lip)', val: 100, min: 70, max: 140, unit: '%' },
+                    smile: { label: 'پێکەنین (Smile)', val: 0, min: 0, max: 30, unit: 'px' }
+                },
+                // Premium Makeup Module Data Nodes
+                makeup: {
+                    lipstick: { label: 'سووراو (Lipstick intensity)', val: 0, min: 0, max: 100, unit: '%' },
+                    blush: { label: 'ڕوومەتگەشێن (Blush Effect)', val: 0, min: 0, max: 100, unit: '%' },
+                    eyeshadow: { label: 'سێبەری چاو (Eyeshadow Volume)', val: 0, min: 0, max: 100, unit: '%' },
+                    eyeliner: { label: 'کل کێشان (Eyeliner Depth)', val: 0, min: 0, max: 100, unit: '%' },
+                    eyelashes: { label: 'برژانگی درێژ (Eyelashes Scale)', val: 0, min: 0, max: 100, unit: '%' }
+                }
+            }
+        };
+
+        // App Initialization Vector
+        document.addEventListener('DOMContentLoaded', () => {
+            renderControls();
+            setupImageUploader();
+        });
+
+        // Switch main menu layout contextual frameworks
+        function switchMainMenu(menuType) {
+            appState.currentMenu = menuType;
+            
+            const btnFace = document.getElementById('btnMainFace');
+            const btnMakeup = document.getElementById('btnMainMakeup');
+            const subTabs = document.getElementById('faceSubTabs');
+
+            if (menuType === 'face') {
+                btnFace.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10";
+                btnMakeup.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900";
+                subTabs.classList.remove('hidden');
+            } else {
+                btnMakeup.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10";
+                btnFace.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900";
+                subTabs.classList.add('hidden');
+            }
+            renderControls();
+        }
+
+        // Subcategory UI Context Exchanger
+        function switchFaceSubTab(subTab) {
+            appState.currentFaceSubTab = subTab;
+            document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+                btn.className = "sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition";
+            });
+            const activeTab = document.getElementById(`tab-${subTab}`);
+            if (activeTab) {
+                activeTab.className = "sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 transition";
+            }
+            renderControls();
+        }
+
+        // Realtime Render Loop for control panels
+        function renderControls() {
+            const container = document.getElementById('controlsContainer');
+            container.innerHTML = '';
+            
+            const activePool = appState.currentMenu === 'face' ? appState.sliders[appState.currentFaceSubTab] : appState.sliders.makeup;
+
+            Object.keys(activePool).forEach(key => {
+                const setting = activePool[key];
+                
+                const controlWrapper = document.createElement('div');
+                controlWrapper.className = "bg-gray-950/40 border border-gray-800/60 rounded-xl p-4 space-y-2 hover:border-gray-700/60 transition";
+                
+                controlWrapper.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-gray-300 flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            ${setting.label}
+                        </span>
+                        <span class="text-xs font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded" id="val-${key}">${setting.val}${setting.unit}</span>
+                    </div>
+                    <input type="range" min="${setting.min}" max="${setting.max}" value="${setting.val}" 
+                        class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-amber-500 focus:outline-none transition-all"
+                        oninput="updateValue('${key}', this.value)">
+                `;
+                container.appendChild(controlWrapper);
+            });
+        }
+
+        // Slider Value Multiplier & Real-time Matrix Transformation Pipe
+        function updateValue(key, value) {
+            const numValue = parseInt(value);
+            
+            if (appState.currentMenu === 'face') {
+                appState.sliders[appState.currentFaceSubTab][key].val = numValue;
+            } else {
+                appState.sliders.makeup[key].val = numValue;
+            }
+
+            const badge = document.getElementById(`val-${key}`);
+            if (badge) {
+                const unit = appState.currentMenu === 'face' ? appState.sliders[appState.currentFaceSubTab][key].unit : appState.sliders.makeup[key].unit;
+                badge.innerText = value + unit;
+            }
+            
+            applyLiveTransformations();
+        }
+
+        // Complex DOM Transformation & Overlay Render Layer Matrix
+        function applyLiveTransformations() {
+            const wrapper = document.getElementById('imageWrapper');
+            const img = document.getElementById('previewImage');
+            const lipstick = document.getElementById('lipstickOverlay');
+            const blush = document.getElementById('blushOverlay');
+
+            // Extraction metrics data structures
+            const shape = appState.sliders.shape;
+            const eyebrows = appState.sliders.eyebrows;
+            const eyes = appState.sliders.eyes;
+            const nose = appState.sliders.nose;
+            const mouth = appState.sliders.mouth;
+            const makeup = appState.sliders.makeup;
+
+            // Generate CSS filter matrices to mock live warp parameters on canvas wrappers
+            const wrapperScaleX = 1 - (shape.slim.val / 150) + (shape.width.val / 200);
+            const wrapperScaleY = 1 + (shape.chin.val / 250);
+            const skewX = shape.jaw.val / 8;
+
+            wrapper.style.transform = `scale(${wrapperScaleX}, ${wrapperScaleY}) skewX(${skewX}deg)`;
+
+            // Mimic eye, eyebrow modifications via local graphical filter shifts
+            const brightnessAdjustment = 100 + (makeup.eyeshadow.val / 4);
+            const contrastAdjustment = 100 + (makeup.eyeliner.val / 5);
+            const hueShift = (makeup.lipstick.val / 10);
+
+            img.style.filter = `brightness(${brightnessAdjustment}%) contrast(${contrastAdjustment}%) saturate(${100 + hueShift}%)`;
+
+            // Active makeup color canvas blending simulator blocks
+            if (makeup.lipstick.val > 0) {
+                lipstick.style.opacity = makeup.lipstick.val / 100;
+            } else {
+                lipstick.style.opacity = 0;
+            }
+
+            if (makeup.blush.val > 0) {
+                blush.style.opacity = makeup.blush.val / 100;
+            } else {
+                blush.style.opacity = 0;
+            }
+        }
+
+        // External Asset Pipeline Uploader Config
+        function setupImageUploader() {
+            const fileInput = document.getElementById('imageUpload');
+            const previewImage = document.getElementById('previewImage');
+
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        resetAll();
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // System Restructuring Pipeline (Hard Reset)
+        function resetAll() {
+            // Restore structural object state primitives
+            Object.keys(appState.sliders).forEach(cat => {
+                Object.keys(appState.sliders[cat]).forEach(key => {
+                    // Set default parameters gracefully
+                    if (['thickness', 'length', 'size', 'height', 'width', 'pupil', 'upperLip', 'lowerLip', 'wing'].includes(key)) {
+                        appState.sliders[cat][key].val = 100;
+                    } else {
+                        appState.sliders[cat][key].val = 0;
+                    }
+                });
+            });
+            renderControls();
+            applyLiveTransformations();
+        }
+    </script>
+</body>
+</html>
