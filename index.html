@@ -6,53 +6,50 @@
     <title>Kurd Face Studio - Powered by Kurd Agency</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Changa:wght@400;600;700&family=Lalezar&family=Reem+Kufi:wght@500;700&family=Amiri:ital@0;1&family=Almarai:wght@400;700&family=El+Messiri:wght@500;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        studioDark: '#08090c',
-                        studioPanel: '#0c0d14',
-                        studioHeader: '#0f111a'
-                    }
-                }
-            }
+            theme: { extend: {} }
         }
     </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Changa:wght@400;600;700&family=Lalezar&family=Reem+Kufi:wght@500;700&family=Amiri:ital@0;1&family=Almarai:wght@400;700&family=El+Messiri:wght@500;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Noto Kufi Arabic', sans-serif; transition: background-color 0.3s, color 0.3s; user-select: none; overflow: hidden; height: 100vh; }
-        .workspace-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
-        .dark .workspace-grid { background-image: radial-gradient(#334155 1px, transparent 1px); }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; user-select: none; overflow: hidden; height: 100vh; transition: background-color 0.3s, color 0.3s; }
         
-        /* Premium Range Input Styling */
+        /* Dark/Light Mode Variables */
+        .dark body { background-color: #08090c; color: #f3f4f6; }
+        html:not(.dark) body { background-color: #f8fafc; color: #1e293b; }
+        
+        .dark .workspace-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
+        html:not(.dark) .workspace-grid { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; background-color: #e2e8f0; }
+
+        .dark .panel-bg { background-color: #0c0d14; border-color: #1e293b; }
+        html:not(.dark) .panel-bg { background-color: #ffffff; border-color: #e2e8f0; }
+
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #f59e0b; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
-        }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1e293b; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #f59e0b; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.8); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #94a3b8; border-radius: 2px; }
+        .dark input[type=range]::-webkit-slider-runnable-track { background: #1e293b; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
         #faceMeshWrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .effect-overlay-layer { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 25; transition: all 0.3s ease; }
         
-        /* Draggable Components */
-        .draggable-text-node {
-            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
-            cursor: move; white-space: pre-wrap; text-align: center; z-index: 50;
-            padding: 6px; border: 1px dashed transparent; transition: border-color 0.2s;
-        }
+        .draggable-text-node { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); cursor: move; white-space: pre-wrap; text-align: center; z-index: 50; padding: 6px; border: 1px dashed transparent; transition: border-color 0.2s; }
         .draggable-text-node:hover { border-color: #f59e0b; }
-
-        .draggable-makeup-node {
-            position: absolute; width: 60px; height: 30px; cursor: move; z-index: 45;
-            border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 50%; filter: blur(4px);
-        }
+        
+        /* Mediapipe Canvas */
+        #makeupCanvas { position: absolute; pointer-events: none; z-index: 20; }
     </style>
 </head>
-<body class="bg-studioDark text-slate-200 dark:bg-studioDark dark:text-f3f4f6 flex flex-col light:bg-white light:text-slate-900">
+<body class="flex flex-col">
 
     <div id="globalProgressBar" class="fixed top-0 left-0 right-0 h-1.5 bg-amber-500/10 z-[100] hidden">
         <div id="progressFillInner" class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 w-0 transition-all duration-100 ease-out"></div>
@@ -61,252 +58,309 @@
     <div id="progressPercentageModal" class="fixed inset-0 bg-black/80 z-[90] hidden flex flex-col items-center justify-center">
         <div class="bg-[#11131e] border border-slate-800 p-8 rounded-2xl text-center max-w-xs w-full shadow-2xl">
             <div class="w-16 h-16 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin mx-auto mb-4"></div>
-            <h3 class="text-sm font-bold text-white mb-1 data-i18n" data-key="ai_process">پڕۆسەی زیرەکی دەستکرد</h3>
-            <p id="progressStatusText" class="text-[11px] text-slate-400 mb-4">Remove BG...</p>
+            <h3 class="text-sm font-bold text-white mb-1" id="ui-loading-title">پڕۆسەی زیرەکی دەستکرد</h3>
+            <p id="progressStatusText" class="text-[11px] text-slate-400 mb-4">لابردنی پاشبنەما (Remove BG)...</p>
             <div class="text-3xl font-black text-amber-500 font-mono" id="numericPercentageDisplay">0%</div>
         </div>
     </div>
 
-    <header class="bg-studioHeader border-b border-slate-800/80 px-6 py-4 flex justify-between items-center shrink-0 z-50 shadow-lg dark:bg-studioHeader">
+    <header class="panel-bg border-b px-6 py-4 flex justify-between items-center shrink-0 z-50 shadow-lg">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-black text-xl shadow-lg shadow-amber-500/20">KF</div>
             <div>
-                <h1 class="text-md font-bold tracking-wide">Kurd Face Studio</h1>
-                <p class="text-[10px] text-amber-500 font-medium data-i18n" data-key="by_author">دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی</p>
+                <h1 class="text-md font-bold tracking-wide dark:text-white text-slate-900" id="ui-app-title">Kurd Face Studio</h1>
+                <p class="text-[10px] text-amber-500 font-medium">دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی</p>
             </div>
         </div>
         
-        <div class="flex items-center gap-3">
-            <button onclick="toggleAppThemeMode()" class="p-2 bg-slate-900 rounded-lg text-sm border border-slate-800">🌓</button>
-            <select id="langSwitcher" onchange="translateStudioInterface(this.value)" class="bg-slate-900 border border-slate-800 rounded-lg text-xs p-2 text-white outline-none">
+        <div class="flex items-center gap-2 lg:gap-3">
+            <select id="langSwitcher" onchange="changeLanguage(this.value)" class="bg-slate-800 text-xs text-white p-2 rounded-lg outline-none border border-slate-700 hidden lg:block">
                 <option value="ku">کوردی</option>
                 <option value="ar">العربية</option>
                 <option value="en">English</option>
             </select>
-            
-            <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-                <button onclick="loadSampleModel('female')" class="px-3 py-1.5 rounded-md text-amber-500 font-bold data-i18n" data-key="sample_female">کچ 👩‍🦰</button>
-                <button onclick="loadSampleModel('male')" class="px-3 py-1.5 rounded-md text-slate-400 font-bold data-i18n" data-key="sample_male">کوڕ 👨‍🦱</button>
+
+            <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-800 text-white text-xs border border-slate-700" id="themeBtn">🌙</button>
+
+            <button onclick="undoAction()" class="p-2 rounded-lg bg-slate-800 text-white text-xs border border-slate-700 hover:bg-slate-700 transition" title="گەڕانەوە">↩</button>
+            <button onclick="redoAction()" class="p-2 rounded-lg bg-slate-800 text-white text-xs border border-slate-700 hover:bg-slate-700 transition" title="چوونە پێش">↪</button>
+
+            <div class="hidden lg:flex bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+                <button onclick="loadSampleModel('female')" class="px-3 py-1.5 rounded-md hover:text-white transition text-amber-500 font-bold" id="ui-sample-girl">کچ (نموونە) 👩‍🦰</button>
+                <button onclick="loadSampleModel('male')" class="px-3 py-1.5 rounded-md hover:text-white transition text-slate-400 font-bold" id="ui-sample-boy">کوڕ (نموونە) 👨‍🦱</button>
             </div>
             
-            <label class="bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer transition flex items-center gap-2 shadow-md">
-                <span class="data-i18n" data-key="upload_btn">بارکردنی وێنە 📁</span>
+            <label class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2.5 rounded-lg cursor-pointer transition shadow-md border border-slate-700 flex items-center gap-2">
+                <span id="ui-upload">بارکردن 📁</span>
                 <input type="file" id="imageLoader" accept="image/*" class="hidden" onchange="loadUserPhoto(event)">
             </label>
-            
-            <button onclick="exportStudioCanvasOutput()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-md data-i18n" data-key="save_btn">
-                پاشەکەوتکردن 💾
+
+            <button onclick="downloadFinalImage()" class="bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer transition flex items-center gap-2 shadow-md">
+                <span id="ui-save">سەیڤکردن 💾</span>
             </button>
         </div>
     </header>
 
     <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
         
-        <div class="flex-1 workspace-grid bg-[#050608] flex items-center justify-center p-6 relative overflow-hidden h-full">
-            <div id="canvasViewport" class="relative max-w-full max-h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center bg-[#090b11] border border-slate-800/50" style="width: 480px; height: 85%;">
+        <div class="flex-1 workspace-grid flex items-center justify-center p-6 relative overflow-hidden h-full">
+            <div id="canvasViewport" class="relative max-w-full max-h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center panel-bg" style="width: 480px; height: 85%;">
                 
                 <div id="faceMeshWrapper">
-                    <img id="targetImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" class="max-w-full max-h-full object-contain select-none transition-all duration-150 origin-center">
+                    <img id="targetImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" class="max-w-full max-h-full object-contain select-none transition-all duration-150 origin-center crossOrigin="anonymous"">
                     
-                    <div id="lipstickLayer" class="draggable-makeup-node mix-blend-multiply opacity-0 bg-red-600 shadow-xl" style="top:55%; left:45%;"></div>
-                    <div id="blushLayer" class="draggable-makeup-node mix-blend-color-burn opacity-0 bg-rose-400" style="top:45%; left:40%;"></div>
-                    
+                    <canvas id="makeupCanvas" class="absolute inset-0 w-full h-full"></canvas>
+
                     <div id="sunlightEffectLayer" class="effect-overlay-layer mix-blend-overlay"></div>
                     <div id="butterflyEffectLayer" class="effect-overlay-layer mix-blend-screen bg-contain bg-no-repeat bg-center"></div>
                     <div id="bodyMuscleLayer" class="effect-overlay-layer mix-blend-hard-light" style="background: radial-gradient(circle at 50% 80%, rgba(0,0,0,0.45) 0%, transparent 40%);"></div>
-                    <div id="bodyTattooLayer" class="effect-overlay-layer mix-blend-multiply bg-center bg-no-repeat" style="background-size: 110px; background-position: 50% 75%;"></div>
                     
                     <div id="globalTextNode" class="draggable-text-node font-bold" style="font-size: 32px; color: #ffffff;">کورد فەیس</div>
                 </div>
                 
-                <canvas id="maskCanvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-80 z-40 mix-blend-destination-out"></canvas>
+                <canvas id="maskCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-40"></canvas>
             </div>
         </div>
 
-        <div class="w-full lg:w-[460px] bg-studioPanel border-t lg:border-t-0 lg:border-r border-slate-800 flex flex-col h-[52%] lg:h-full shrink-0 shadow-2xl">
+        <div class="w-full lg:w-[460px] panel-bg border-t lg:border-t-0 lg:border-r flex flex-col h-[52%] lg:h-full shrink-0 shadow-2xl">
             
-            <div class="flex overflow-x-auto bg-[#0f111a] border-b border-slate-800 p-3 gap-2 no-scrollbar shrink-0">
-                <button onclick="switchStudioCategory('face', this)" class="cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">
-                    👤 <span class="data-i18n" data-key="cat_face">دەموچاو</span>
-                </button>
-                <button onclick="switchStudioCategory('makeup', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    💄 <span class="data-i18n" data-key="cat_makeup">مەیک ئەپ</span>
-                </button>
-                <button onclick="switchStudioCategory('body', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    💪 <span class="data-i18n" data-key="cat_body">جەستە</span>
-                </button>
-                <button onclick="switchStudioCategory('filters', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    🎬 <span class="data-i18n" data-key="cat_filters">فلتەرەکان</span>
-                </button>
-                <button onclick="switchStudioCategory('effects', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    ✨ <span class="data-i18n" data-key="cat_effects">ئیفێکتەکان</span>
-                </button>
-                <button onclick="switchStudioCategory('text', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    📝 <span class="data-i18n" data-key="cat_text">تێکست</span>
-                </button>
-                <button onclick="switchStudioCategory('ai', this)" class="cat-btn text-amber-500 hover:bg-amber-500/10 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">
-                    🤖 <span class="data-i18n" data-key="cat_ai">هۆشی دەستکرد</span>
-                </button>
+            <div class="flex overflow-x-auto panel-bg border-b p-3 gap-2 no-scrollbar shrink-0" id="mainCategories">
+                <button onclick="switchStudioCategory('face', this)" class="cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">👤 دەموچاو</button>
+                <button onclick="switchStudioCategory('makeup', this)" class="cat-btn text-slate-500 dark:text-slate-400 hover:text-amber-500 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">💄 مەیک ئەپ</button>
+                <button onclick="switchStudioCategory('body', this)" class="cat-btn text-slate-500 dark:text-slate-400 hover:text-amber-500 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">💪 جەستە</button>
+                <button onclick="switchStudioCategory('filters', this)" class="cat-btn text-slate-500 dark:text-slate-400 hover:text-amber-500 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">🎬 فلتەرەکان</button>
+                <button onclick="switchStudioCategory('effects', this)" class="cat-btn text-slate-500 dark:text-slate-400 hover:text-amber-500 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">✨ ئیفێکتەکان</button>
+                <button onclick="switchStudioCategory('text', this)" class="cat-btn text-slate-500 dark:text-slate-400 hover:text-amber-500 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">📝 تێکست</button>
+                <button onclick="switchStudioCategory('ai', this)" class="cat-btn text-amber-500 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">🤖 هۆشی دەستکرد</button>
             </div>
 
-            <div id="subCategoryContextArea" class="flex overflow-x-auto bg-[#121420] border-b border-slate-800/60 p-2.5 gap-2 no-scrollbar shrink-0"></div>
-            <div id="controlsConsoleArea" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0c0d14]"></div>
+            <div id="subCategoryContextArea" class="flex overflow-x-auto panel-bg border-b p-2.5 gap-2 no-scrollbar shrink-0"></div>
+
+            <div id="controlsConsoleArea" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar panel-bg"></div>
+            
         </div>
     </main>
 
     <script>
-        // Localization Matrix Payload
-        const i18nMatrix = {
-            ku: {
-                by_author: "دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی", ai_process: "پڕۆسەی زیرەکی دەستکرد",
-                sample_female: "کچ 👩‍🦰", sample_male: "کوڕ 👨‍🦱", upload_btn: "بارکردنی وێنە 📁", save_btn: "پاشەکەوتکردن 💾",
-                cat_face: "دەموچاو", cat_makeup: "مەیک ئەپ", cat_body: "جەستە", cat_filters: "فلتەرەکان", cat_effects: "ئیفێکتەکان", cat_text: "تێکست", cat_ai: "هۆشی دەستکرد"
-            },
-            ar: {
-                by_author: "تم التطوير بواسطة آريان علي : كورد أجينسي", ai_process: "معالجة الذكاء الاصطناعي",
-                sample_female: "أنثى 👩‍🦰", sample_male: "ذكر 👨‍🦱", upload_btn: "تحميل صورة 📁", save_btn: "حفظ الصورة 💾",
-                cat_face: "الوجه", cat_makeup: "المكياج", cat_body: "الجسم", cat_filters: "الفلاتر", cat_effects: "المؤثرات", cat_text: "النصوص", cat_ai: "الذكاء الاصطناعي"
-            },
-            en: {
-                by_author: "Developed by Aryan Ali : Kurd Agency", ai_process: "AI Processing Operational Pipeline",
-                sample_female: "Female 👩‍🦰", sample_male: "Male 👨‍🦱", upload_btn: "Upload Image 📁", save_btn: "Save Image 💾",
-                cat_face: "Face Engine", cat_makeup: "Makeup Profile", cat_body: "Body Tuning", cat_filters: "Filter Matrix", cat_effects: "FX Overlays", cat_text: "Text Engine", cat_ai: "Artificial Intelligence"
-            }
-        };
-
+        // --- 1. State & Dictionaries ---
         const appEngineState = {
-            activeCategory: 'face',
-            activeSubTab: 'shape',
-            eraserActive: false,
-            currentLanguage: 'ku',
-            themeMode: 'dark',
-            textContent: 'کورد فەیس',
+            activeCategory: 'face', activeSubTab: 'shape',
+            eraserActive: false, currentHexColor: '#dc2626', textContent: 'کورد فەیس',
+            landmarks: null, // Mediapipe points
+            history: { past: [], future: [] }, // Undo/Redo Storage
             sliders: {
-                shape: {
-                    slim: { label: 'باریککردنی شێوە (Slim)', val: 0, min: -15, max: 15, unit: '%' },
-                    width: { label: 'پانی دەموچاو (Width)', val: 0, min: -20, max: 20, unit: '%' },
-                    vshape: { label: 'شێوەی ڤی (V-Shape)', val: 0, min: 0, max: 20, unit: '%' }
-                },
-                eyebrows: {
-                    thickness: { label: 'ئەستووری برۆ (Thickness)', val: 0, min: -10, max: 10, unit: 'px' },
-                    lift: { label: 'بەرزکردنەوەی برۆ (Lift)', val: 0, min: -15, max: 15, unit: 'px' }
-                },
-                eyes: {
-                    size: { label: 'قەبارەی چاوەکان (Size)', val: 100, min: 80, max: 125, unit: '%' }
-                },
-                nose: {
-                    size: { label: 'قەبارەی لوت (Size)', val: 100, min: 80, max: 120, unit: '%' }
-                },
-                mouth: {
-                    size: { label: 'قەبارەی دەم (Size)', val: 100, min: 85, max: 120, unit: '%' }
-                },
-                lipstick: {
-                    intensity: { label: 'خەستی سووراو', val: 0, min: 0, max: 100, unit: '%' },
-                    size: { label: 'قەبارەی سووراو', val: 60, min: 30, max: 120, unit: 'px' }
-                },
-                blush: {
-                    intensity: { label: 'خەستی ڕوومەتگەشێن', val: 0, min: 0, max: 100, unit: '%' },
-                    size: { label: 'بڵاوبوونەوەی ڕوومەتگەشێن', val: 60, min: 30, max: 150, unit: 'px' }
-                },
-                bodyManual: { scaleX: { label: 'پانی جەستە دەستی', val: 100, min: 80, max: 120, unit: '%' } },
+                shape: { slim: { label: 'باریککردنی شێوە', val: 0, min: -15, max: 15, unit: '%' }, width: { label: 'پانی دەموچاو', val: 0, min: -20, max: 20, unit: '%' }, vshape: { label: 'شێوەی ڤی', val: 0, min: 0, max: 20, unit: '%' } },
+                eyebrows: { thickness: { label: 'ئەستووری برۆ', val: 0, min: -10, max: 10, unit: 'px' }, lift: { label: 'بەرزکردنەوەی برۆ', val: 0, min: -15, max: 15, unit: 'px' } },
+                eyes: { size: { label: 'قەبارەی چاوەکان', val: 100, min: 80, max: 125, unit: '%' }, height: { label: 'بڵندایی چاو', val: 100, min: 90, max: 115, unit: '%' } },
+                nose: { size: { label: 'قەبارەی لوت', val: 100, min: 80, max: 120, unit: '%' }, width: { label: 'پانی لوت', val: 100, min: 80, max: 120, unit: '%' } },
+                mouth: { size: { label: 'قەبارەی دەم', val: 100, min: 85, max: 120, unit: '%' }, smile: { label: 'پێکەنین', val: 0, min: -10, max: 20, unit: 'px' } },
+                lipstick: { intensity: { label: 'خەستی سووراو', val: 0, min: 0, max: 100, unit: '%' } },
+                blush: { intensity: { label: 'خەستی ڕوومەتگەشێن', val: 0, min: 0, max: 100, unit: '%' } },
+                bodyManual: { scaleX: { label: 'پانی ڕێکخستنی دەستی', val: 100, min: 80, max: 120, unit: '%' } },
                 bodyAuto: { slimming: { label: 'باریککردنی زیرەک', val: 0, min: 0, max: 35, unit: '%' } },
-                bodyMuscle: { definition: { label: 'هێڵی ماسولکەکان', val: 0, min: 0, max: 100, unit: '%' } },
-                bodyAppearance: { smoothness: { label: 'لووسکردنی پێست', val: 0, min: 0, max: 100, unit: '%' } },
-                bodyTattoo: { alpha: { label: 'تۆخی تاتۆ', val: 0, min: 0, max: 100, unit: '%' } }
+                bodyMuscle: { definition: { label: 'هێڵی ماسولکەکان', val: 0, min: 0, max: 100, unit: '%' } }
             }
         };
 
         const hierarchyConfig = {
-            face: [
-                { id: 'shape', label: 'شێوە (Shape)', icon: '📐' },
-                { id: 'eyebrows', label: 'برۆکان', icon: '〰️' },
-                { id: 'eyes', label: 'چاوەکان', icon: '👁️' },
-                { id: 'nose', label: 'لوت', icon: '👃' },
-                { id: 'mouth', label: 'دەم', icon: '👄' }
-            ],
-            makeup: [
-                { id: 'lipstick', label: 'سووراو', icon: '💄' },
-                { id: 'blush', label: 'ڕوومەتگەشێن', icon: '🌸' }
-            ],
-            body: [
-                { id: 'bodyManual', label: 'دەستی', icon: '✋' },
-                { id: 'bodyAuto', label: 'زیرەک', icon: '✨' },
-                { id: 'bodyMuscle', label: 'ماسولکە AI', icon: '💪' },
-                { id: 'bodyAppearance', label: 'پێست', icon: '🧼' },
-                { id: 'bodyTattoo', label: 'تاتۆ', icon: '⚓' }
-            ],
+            face: [{ id: 'shape', label: 'شێوە', icon: '📐' }, { id: 'eyebrows', label: 'برۆکان', icon: '〰️' }, { id: 'eyes', label: 'چاوەکان', icon: '👁️' }, { id: 'nose', label: 'لوت', icon: '👃' }, { id: 'mouth', label: 'دەم', icon: '👄' }],
+            makeup: [{ id: 'presets', label: 'ئامادەکراو', icon: '✨' }, { id: 'lipstick', label: 'سووراو', icon: '💄' }, { id: 'blush', label: 'ڕوومەتگەشێن', icon: '🌸' }],
+            body: [{ id: 'bodyManual', label: 'دەستی', icon: '✋' }, { id: 'bodyAuto', label: 'ئۆتۆ', icon: '✨' }, { id: 'bodyMuscle', label: 'ماسولکە', icon: '💪' }],
             filters: null,
-            effects: [
-                { id: 'sunlightSub', label: 'رووناکی Sunlight', icon: '☀️' },
-                { id: 'butterflySub', label: 'پەپوولەکان', icon: '🦋' }
-            ],
-            text: [
-                { id: 'textAdd', label: 'نووسین', icon: '➕' },
-                { id: 'textStyle', label: 'ستایل و فۆنت', icon: '🎨' }
-            ],
+            effects: [{ id: 'sunlightSub', label: 'خۆر', icon: '☀️' }, { id: 'butterflySub', label: 'پەپوولە', icon: '🦋' }],
+            text: [{ id: 'textAdd', label: 'نووسین', icon: '➕' }, { id: 'textStyle', label: 'ستایل', icon: '🎨' }, { id: 'textBlend', label: 'تێکەڵکردن', icon: '🌀' }],
             ai: null
         };
 
-        const fontLibrary = [
-            { id: 'Noto Kufi Arabic', name: 'Noto Kufi (کوردی/عەرەبی)', lang: 'ku' },
-            { id: 'Cairo', name: 'Cairo Font (قاهیرە)', lang: 'ar' },
-            { id: 'Tajawal', name: 'Tajawal Premium', lang: 'ar' },
-            { id: 'Changa', name: 'Changa Bold', lang: 'ar' },
-            { id: 'Roboto', name: 'Roboto Clean English', lang: 'en' },
-            { id: 'Montserrat', name: 'Montserrat Sans', lang: 'en' },
-            { id: 'Inter', name: 'Inter UI System', lang: 'en' }
-        ];
+        const fontLibrary = [{ id: 'Noto Kufi Arabic', name: 'Noto Kufi (کوردی/عەرەبی)' }, { id: 'Cairo', name: 'Cairo Font' }, { id: 'Tajawal', name: 'Tajawal' }, { id: 'Roboto', name: 'Roboto (English)' }];
+        const extensiveFiltersList = [{ id: 'none', label: 'ئاسایی' }, { id: 'basis', label: 'Basis Beauty 🌸', matrix: 'contrast(1.15) brightness(1.03) saturate(1.12)' }, { id: 'clear', label: 'Clear Face ✨', matrix: 'brightness(1.10) contrast(1.04) saturate(0.92)' }, { id: 'retro', label: 'Retro 80s 🕹️', matrix: 'contrast(1.2) sepia(0.25) saturate(1.5)' }];
 
-        // 30+ Extensive Filters Deployment Matrix Mapping
-        const extensiveFiltersList = [
-            { id: 'none', label: 'ئاسایی (Normal)' }, 
-            { id: 'basis', label: 'Basis Beauty 🌸', matrix: 'contrast(1.15) brightness(1.03) saturate(1.12)' },
-            { id: 'clear', label: 'Clear Face ✨', matrix: 'brightness(1.10) contrast(1.04) saturate(0.92)' }, 
-            { id: 'cream', label: 'Cream Soft 🍦', matrix: 'sepia(0.18) brightness(1.06) saturate(1.05) contrast(0.96)' },
-            { id: 'cold', label: 'Cold Luxury ❄️', matrix: 'hue-rotate(12deg) saturate(0.88) contrast(1.04)' }, 
-            { id: 'sunset', label: 'Sunset Glow 🌇', matrix: 'sepia(0.35) saturate(1.4) hue-rotate(-12deg) brightness(0.96)' },
-            { id: 'vivid', label: 'Vivid Pop 🌈', matrix: 'saturate(2.0) contrast(1.15)' },
-            { id: 'mono', label: 'Noir Black & White 🖤', matrix: 'grayscale(1) contrast(1.2)' },
-            { id: 'vintage', label: 'Vintage Look 📻', matrix: 'sepia(0.4) contrast(0.9) brightness(0.95)' },
-            { id: 'cyber', label: 'Cyberpunk Neon 🪐', matrix: 'hue-rotate(-50deg) saturate(1.9)' }
-        ];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSubTabsSystem();
-            renderControlConsole();
-            initializeEraserSystem();
-            initializeDraggablesEngine();
+        // --- 2. Mediapipe AI Face Mesh Logic (The Fix for Lips/Brows) ---
+        const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        
+        faceMesh.onResults((results) => {
+            appEngineState.landmarks = results.multiFaceLandmarks ? results.multiFaceLandmarks[0] : null;
+            drawMakeupOnCanvas();
         });
 
-        function translateStudioInterface(lang) {
-            appEngineState.currentLanguage = lang;
-            document.dir = (lang === 'en') ? 'ltr' : 'rtl';
-            document.querySelectorAll('.data-i18n').forEach(node => {
-                const key = node.getAttribute('data-key');
-                if (i18nMatrix[lang][key]) node.innerText = i18nMatrix[lang][key];
-            });
-        }
-
-        function toggleAppThemeMode() {
-            const htmlNode = document.documentElement;
-            if (htmlNode.classList.contains('dark')) {
-                htmlNode.classList.remove('dark');
-                htmlNode.classList.add('light');
+        async function processImageForAI() {
+            const img = document.getElementById('targetImage');
+            if (img.complete && img.naturalWidth !== 0) {
+                await faceMesh.send({image: img});
             } else {
-                htmlNode.classList.remove('light');
-                htmlNode.classList.add('dark');
+                img.onload = async () => { await faceMesh.send({image: img}); };
             }
         }
 
+        function drawMakeupOnCanvas() {
+            const canvas = document.getElementById('makeupCanvas');
+            const img = document.getElementById('targetImage');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = img.clientWidth;
+            canvas.height = img.clientHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!appEngineState.landmarks) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const intensity = appEngineState.sliders.lipstick.intensity.val / 100;
+
+            if (intensity > 0) {
+                // Lips precise points (Mediapipe refine landmarks for lips)
+                const LIPS_INDICES = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+                ctx.beginPath();
+                LIPS_INDICES.forEach((index, i) => {
+                    const pt = appEngineState.landmarks[index];
+                    if (i === 0) ctx.moveTo(pt.x * width, pt.y * height);
+                    else ctx.lineTo(pt.x * width, pt.y * height);
+                });
+                ctx.closePath();
+                ctx.fillStyle = appEngineState.currentHexColor;
+                ctx.globalAlpha = intensity * 0.6; // Base multiply effect
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.fill();
+            }
+        }
+
+        // --- 3. Undo/Redo Engine ---
+        function saveState() {
+            // Save current parameter object
+            const state = JSON.stringify({
+                sliders: appEngineState.sliders,
+                color: appEngineState.currentHexColor,
+                text: appEngineState.textContent,
+                filter: document.getElementById('targetImage').style.filter
+            });
+            appEngineState.history.past.push(state);
+            if(appEngineState.history.past.length > 15) appEngineState.history.past.shift();
+            appEngineState.history.future = []; // Clear redo stack on new action
+        }
+
+        function undoAction() {
+            if (appEngineState.history.past.length === 0) return;
+            const currentState = JSON.stringify({ sliders: appEngineState.sliders, color: appEngineState.currentHexColor, text: appEngineState.textContent, filter: document.getElementById('targetImage').style.filter });
+            appEngineState.history.future.push(currentState);
+            
+            const prevState = JSON.parse(appEngineState.history.past.pop());
+            restoreState(prevState);
+        }
+
+        function redoAction() {
+            if (appEngineState.history.future.length === 0) return;
+            saveState(); // Save current before going forward
+            appEngineState.history.past.pop(); // Remove the duplicate save
+            const nextState = JSON.parse(appEngineState.history.future.pop());
+            restoreState(nextState);
+        }
+
+        function restoreState(state) {
+            appEngineState.sliders = state.sliders;
+            appEngineState.currentHexColor = state.color;
+            appEngineState.textContent = state.text;
+            document.getElementById('targetImage').style.filter = state.filter;
+            document.getElementById('globalTextNode').innerText = state.text;
+            executeCoreRenderingPipeline();
+            renderControlConsole();
+        }
+
+        // --- 4. Eraser (Magic Eraser Fix) ---
+        let drawing = false, eraserCtx, maskCanvasObj;
+        function initializeEraserSystem() {
+            maskCanvasObj = document.getElementById('maskCanvas');
+            eraserCtx = maskCanvasObj.getContext('2d');
+            maskCanvasObj.addEventListener('mousedown', (e) => { drawing = true; erasePoint(e); });
+            maskCanvasObj.addEventListener('mouseup', () => { drawing = false; eraserCtx.beginPath(); saveState(); });
+            maskCanvasObj.addEventListener('mousemove', erasePoint);
+        }
+
+        function toggleMagicEraserEngine() {
+            appEngineState.eraserActive = !appEngineState.eraserActive;
+            const btn = document.getElementById('eraserTriggerButton');
+            const img = document.getElementById('targetImage');
+            
+            if (appEngineState.eraserActive) {
+                btn.className = "w-full bg-amber-500 text-black p-3.5 rounded-xl flex items-center justify-center gap-2 transition font-bold shadow-md";
+                maskCanvasObj.style.pointerEvents = 'auto';
+                
+                // Draw image to canvas to allow real erasing
+                maskCanvasObj.width = img.clientWidth; 
+                maskCanvasObj.height = img.clientHeight;
+                eraserCtx.drawImage(img, 0, 0, maskCanvasObj.width, maskCanvasObj.height);
+                img.style.opacity = 0; // Hide original
+                maskCanvasObj.classList.remove('opacity-75', 'pointer-events-none');
+                maskCanvasObj.classList.add('z-50');
+            } else {
+                btn.className = "w-full panel-bg border p-3.5 rounded-xl flex items-center justify-center gap-2 transition text-slate-400 font-medium";
+                maskCanvasObj.style.pointerEvents = 'none';
+                // Apply changes back to image theoretically (requires complex backend or dataURL)
+                img.src = maskCanvasObj.toDataURL();
+                img.style.opacity = 1;
+                eraserCtx.clearRect(0,0, maskCanvasObj.width, maskCanvasObj.height);
+            }
+        }
+
+        function erasePoint(e) {
+            if (!drawing || !appEngineState.eraserActive) return;
+            const rect = maskCanvasObj.getBoundingClientRect();
+            const scaleX = maskCanvasObj.width / rect.width;
+            const scaleY = maskCanvasObj.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            eraserCtx.globalCompositeOperation = 'destination-out'; // This actually erases!
+            eraserCtx.lineWidth = 30; 
+            eraserCtx.lineCap = 'round';
+            eraserCtx.lineTo(x, y); 
+            eraserCtx.stroke();
+            eraserCtx.beginPath(); 
+            eraserCtx.moveTo(x, y);
+        }
+
+        // --- 5. Dark Mode & Save ---
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function downloadFinalImage() {
+            // Create a temporary canvas to composite everything
+            const finalCanvas = document.createElement('canvas');
+            const img = document.getElementById('targetImage');
+            finalCanvas.width = img.clientWidth;
+            finalCanvas.height = img.clientHeight;
+            const fCtx = finalCanvas.getContext('2d');
+            
+            // Draw Base Image
+            fCtx.filter = img.style.filter;
+            fCtx.drawImage(img, 0, 0, finalCanvas.width, finalCanvas.height);
+            fCtx.filter = 'none';
+
+            // Draw Makeup
+            fCtx.drawImage(document.getElementById('makeupCanvas'), 0, 0);
+            
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = 'KurdFaceStudio_Edited.png';
+            link.href = finalCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // --- Core UI Functions ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSubTabsSystem(); renderControlConsole(); initializeEraserSystem();
+            processImageForAI(); // Start Mediapipe
+        });
+
         function switchStudioCategory(cat, element) {
             appEngineState.activeCategory = cat;
-            document.querySelectorAll('.cat-btn').forEach(b => {
-                b.className = "cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0";
-            });
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.replace('bg-amber-500', 'text-slate-500'));
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.replace('text-black', 'text-slate-500'));
             element.className = "cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0";
             appEngineState.activeSubTab = hierarchyConfig[cat] ? hierarchyConfig[cat][0].id : null;
-            renderSubTabsSystem();
-            renderControlConsole();
+            document.getElementById('globalTextNode').style.display = (cat === 'text') ? 'block' : 'none';
+            renderSubTabsSystem(); renderControlConsole();
         }
 
         function renderSubTabsSystem() {
@@ -318,14 +372,9 @@
 
             pool.forEach(item => {
                 const btn = document.createElement('button');
-                btn.className = (item.id === appEngineState.activeSubTab) ? "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition flex items-center gap-1" : "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition flex items-center gap-1";
-                btn.innerHTML = `<span>${item.icon}</span> ${item.label}`;
-                btn.onclick = function() {
-                    appEngineState.activeSubTab = item.id;
-                    document.querySelectorAll('.sub-tab-node').forEach(b => b.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition");
-                    this.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition";
-                    renderControlConsole();
-                };
+                btn.className = (item.id === appEngineState.activeSubTab) ? "shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold" : "shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-500 panel-bg border border-slate-700/50";
+                btn.innerHTML = `${item.icon} ${item.label}`;
+                btn.onclick = () => { appEngineState.activeSubTab = item.id; renderSubTabsSystem(); renderControlConsole(); };
                 bar.appendChild(btn);
             });
         }
@@ -337,211 +386,85 @@
             const sub = appEngineState.activeSubTab;
 
             if (['face', 'makeup', 'body'].includes(cat) && appEngineState.sliders[sub]) {
-                if (sub === 'lipstick' || sub === 'blush') {
+                if (sub === 'lipstick') {
                     const grid = document.createElement('div');
                     grid.className = "grid grid-cols-5 gap-2 mb-3";
-                    const tones = ['#dc2626', '#be185d', '#9d174d', '#e11d48', '#f43f5e', '#a21caf', '#ea580c', '#f59e0b'];
+                    const tones = ['#dc2626', '#be185d', '#9d174d', '#ea580c'];
                     tones.forEach(color => {
-                        grid.innerHTML += `<button onclick="assignMakeupColorPalette('${sub}', '${color}')" class="aspect-square rounded-xl border border-slate-800 transition transform hover:scale-110" style="background-color: ${color}"></button>`;
+                        grid.innerHTML += `<button onclick="assignLipstickTone('${color}')" class="aspect-square rounded-xl border border-slate-700 hover:scale-105 transition" style="background-color: ${color}"></button>`;
                     });
                     consoleBox.appendChild(grid);
                 }
                 Object.keys(appEngineState.sliders[sub]).forEach(key => {
-                    consoleBox.appendChild(buildSliderDomNode(key, appEngineState.sliders[sub][key], sub));
+                    const wrap = document.createElement('div');
+                    wrap.className = "panel-bg border rounded-xl p-3 space-y-2";
+                    const data = appEngineState.sliders[sub][key];
+                    wrap.innerHTML = `
+                        <div class="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-300">
+                            <span>${data.label}</span><span id="out-${key}" class="text-amber-500">${data.val}${data.unit}</span>
+                        </div>
+                        <input type="range" min="${data.min}" max="${data.max}" value="${data.val}" onchange="saveState()" oninput="syncSlider('${sub}', '${key}', this.value)">
+                    `;
+                    consoleBox.appendChild(wrap);
                 });
-            }
-            else if (cat === 'filters') {
+            } else if (cat === 'filters') {
                 const grid = document.createElement('div');
                 grid.className = "grid grid-cols-2 gap-3";
                 extensiveFiltersList.forEach(f => {
-                    grid.innerHTML += `
-                        <div onclick="applyStudioFilterMatrix('${f.id}')" class="cursor-pointer bg-slate-900 border border-slate-800/80 p-3 rounded-xl text-center hover:border-amber-500/60 transition shadow-md">
-                            <span class="text-xs font-semibold text-slate-300">${f.label}</span>
-                        </div>`;
+                    grid.innerHTML += `<div onclick="saveState(); applyStudioFilter('${f.id}')" class="cursor-pointer panel-bg border p-3 rounded-xl text-center hover:border-amber-500"><span class="text-xs font-semibold text-slate-500 dark:text-slate-300">${f.label}</span></div>`;
                 });
                 consoleBox.appendChild(grid);
-            }
-            else if (cat === 'text') {
-                if (sub === 'textAdd') {
-                    consoleBox.innerHTML = `
-                        <div class="space-y-3">
-                            <textarea oninput="modifyOverlayTextPayload(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white text-sm focus:border-amber-500 focus:outline-none" rows="3">${appEngineState.textContent}</textarea>
-                        </div>`;
-                } else {
-                    let opts = fontLibrary.map(f => `<option value="${f.id}">${f.name} (${f.lang})</option>`).join('');
-                    consoleBox.innerHTML = `
-                        <div class="space-y-3">
-                            <select onchange="modifyOverlayTextFont(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white text-xs outline-none focus:border-amber-500">${opts}</select>
-                            <input type="color" oninput="modifyOverlayTextColor(this.value)" class="w-full h-10 rounded-lg cursor-pointer bg-transparent border-0">
-                        </div>`;
-                }
-            }
-            else if (cat === 'ai') {
+            } else if (cat === 'ai') {
                 consoleBox.innerHTML = `
-                    <button onclick="executeBackgroundRemovalPipeline()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold p-3.5 rounded-xl flex items-center justify-center gap-2 transition hover:opacity-90 shadow-lg">✂️ لابردنی ئۆتۆماتیکی باکگراوند</button>
-                    <button onclick="toggleMagicEraserEngine()" id="eraserTriggerButton" class="w-full bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex items-center justify-center gap-2 transition text-slate-300 font-medium">🖌️ سڕینەوەی دەستی زیرەک (Magic Eraser)</button>`;
+                    <button onclick="toggleMagicEraserEngine()" id="eraserTriggerButton" class="w-full panel-bg border p-3.5 rounded-xl flex items-center justify-center gap-2 transition text-slate-500 font-medium">🖌️ سڕینەوەی دەستی زیرەک</button>
+                `;
             }
         }
 
-        function buildSliderDomNode(key, data, subTab) {
-            const wrap = document.createElement('div');
-            wrap.className = "bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 space-y-2 shadow-sm";
-            wrap.innerHTML = `
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-300 font-medium">${data.label}</span>
-                    <span id="output-${key}" class="text-amber-500 font-mono font-bold">${data.val}${data.unit}</span>
-                </div>
-                <input type="range" min="${data.min}" max="${data.max}" value="${data.val}" oninput="syncSliderMovement('${subTab}', '${key}', this.value)">`;
-            return wrap;
-        }
-
-        function syncSliderMovement(subTab, key, val) {
+        function syncSlider(subTab, key, val) {
             appEngineState.sliders[subTab][key].val = parseInt(val);
-            document.getElementById(`output-${key}`).innerText = val + appEngineState.sliders[subTab][key].unit;
+            document.getElementById(`out-${key}`).innerText = val + appEngineState.sliders[subTab][key].unit;
             executeCoreRenderingPipeline();
         }
 
         function executeCoreRenderingPipeline() {
             const img = document.getElementById('targetImage');
             const shape = appEngineState.sliders.shape;
-            
-            // Warp matrix mapping transformations
-            const faceScaleX = 1 + (shape.width.val / 100) - (shape.slim.val / 100);
-            img.style.transform = `scaleX(${faceScaleX}) perspective(500px) rotateX(${shape.vshape.val * 0.2}deg)`;
-
-            // Interactive Live Adjustments for Makeup Layer Configurations
-            const lip = document.getElementById('lipstickLayer');
-            lip.style.opacity = appEngineState.sliders.lipstick.intensity.val / 100;
-            lip.style.width = appEngineState.sliders.lipstick.size.val + 'px';
-
-            const blush = document.getElementById('blushLayer');
-            blush.style.opacity = appEngineState.sliders.blush.intensity.val / 100;
-            blush.style.width = appEngineState.sliders.blush.size.val + 'px';
+            img.style.transform = `scaleX(${1 + (shape.width.val/100)}) rotateX(${shape.vshape.val*0.3}deg)`;
+            drawMakeupOnCanvas();
         }
 
-        function assignMakeupColorPalette(layer, hex) {
-            const node = document.getElementById(`${layer}Layer`);
-            node.style.backgroundColor = hex;
-            node.style.boxShadow = `0 0 20px ${hex}`;
-            appEngineState.sliders[layer].intensity.val = 80;
+        function assignLipstickTone(hex) {
+            appEngineState.currentHexColor = hex;
+            appEngineState.sliders.lipstick.intensity.val = 75;
+            saveState();
             renderControlConsole();
             executeCoreRenderingPipeline();
         }
 
-        function applyStudioFilterMatrix(id) {
-            const img = document.getElementById('targetImage');
+        function applyStudioFilter(id) {
             const found = extensiveFiltersList.find(f => f.id === id);
-            img.style.filter = found && found.matrix ? found.matrix : 'none';
-        }
-
-        function modifyOverlayTextPayload(val) { document.getElementById('globalTextNode').innerText = val; }
-        function modifyOverlayTextFont(f) { document.getElementById('globalTextNode').style.fontFamily = f; }
-        function modifyOverlayTextColor(c) { document.getElementById('globalTextNode').style.color = c; }
-
-        function initializeDraggablesEngine() {
-            const nodes = document.querySelectorAll('.draggable-text-node, .draggable-makeup-node');
-            nodes.forEach(node => {
-                let active = false, startX, startY, initX, initY;
-                node.addEventListener('mousedown', (e) => {
-                    active = true; initX = node.offsetLeft; initY = node.offsetTop;
-                    startX = e.clientX; startY = e.clientY;
-                    document.onmousemove = (ev) => {
-                        if (!active) return;
-                        node.style.left = (initX + (ev.clientX - startX)) + 'px';
-                        node.style.top = (initY + (ev.clientY - startY)) + 'px';
-                    };
-                    document.onmouseup = () => active = false;
-                });
-            });
-        }
-
-        // Realtime Isolated Local Brush Canvas System Configuration
-        let drawing = false, ctx, maskCanvas;
-        function initializeEraserSystem() {
-            maskCanvas = document.getElementById('maskCanvas');
-            ctx = maskCanvas.getContext('2d');
-            maskCanvas.addEventListener('mousedown', () => drawing = true);
-            maskCanvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-            maskCanvas.addEventListener('mousemove', (e) => {
-                if (!drawing || !appEngineState.eraserActive) return;
-                const rect = maskCanvas.getBoundingClientRect();
-                ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.strokeStyle = '#000000';
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-            });
-        }
-
-        function toggleMagicEraserEngine() {
-            appEngineState.eraserActive = !appEngineState.eraserActive;
-            const btn = document.getElementById('eraserTriggerButton');
-            const img = document.getElementById('targetImage');
-            if(appEngineState.eraserActive) {
-                btn.className = "w-full bg-amber-500 text-black p-3.5 rounded-xl flex items-center justify-center gap-2 font-bold";
-                maskCanvas.style.pointerEvents = 'auto';
-                maskCanvas.width = img.clientWidth; maskCanvas.height = img.clientHeight;
-            } else {
-                btn.className = "w-full bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex items-center justify-center gap-2 text-slate-300 font-medium";
-                maskCanvas.style.pointerEvents = 'none';
-            }
-        }
-
-        function executeBackgroundRemovalPipeline() {
-            const modal = document.getElementById('progressPercentageModal');
-            const fill = document.getElementById('progressFillInner');
-            const numDisp = document.getElementById('numericPercentageDisplay');
-            modal.classList.remove('hidden');
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 5;
-                numDisp.innerText = progress + "%";
-                fill.style.width = progress + "%";
-                if(progress >= 100) {
-                    clearInterval(interval);
-                    modal.classList.add('hidden');
-                    document.getElementById('targetImage').style.opacity = '0.4'; // Simulation fallback indicator matrix
-                }
-            }, 100);
+            document.getElementById('targetImage').style.filter = found && found.matrix ? found.matrix : 'none';
         }
 
         function loadSampleModel(gender) {
-            document.getElementById('targetImage').src = (gender === 'female') ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop";
+            saveState();
+            const img = document.getElementById('targetImage');
+            img.src = (gender === 'female') ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop";
+            img.onload = () => processImageForAI();
         }
 
         function loadUserPhoto(e) {
-            const file = e.target.files[0];
-            if (file) {
+            if (e.target.files[0]) {
+                saveState();
                 const reader = new FileReader();
-                reader.onload = function(evt) { document.getElementById('targetImage').src = evt.target.result; };
-                reader.readAsDataURL(file);
+                reader.onload = (evt) => { 
+                    const img = document.getElementById('targetImage');
+                    img.src = evt.target.result; 
+                    img.onload = () => processImageForAI();
+                };
+                reader.readAsDataURL(e.target.files[0]);
             }
-        }
-
-        // Full Compilation Canvas Image Exporter Integration Pipeline
-        function exportStudioCanvasOutput() {
-            const img = document.getElementById('targetImage');
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || 800;
-            canvas.height = img.naturalHeight || 800;
-            const context = canvas.getContext('2d');
-            
-            // Draw baseline processed images onto the active layer
-            context.filter = img.style.filter;
-            context.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Overlay Text Matrix Render Payload
-            const txt = document.getElementById('globalTextNode');
-            context.filter = 'none';
-            context.font = `bold 40px ${txt.style.fontFamily || 'sans-serif'}`;
-            context.fillStyle = txt.style.color || '#ffffff';
-            context.textAlign = 'center';
-            context.fillText(txt.innerText, canvas.width / 2, canvas.height / 2);
-            
-            const url = canvas.toDataURL('image/jpeg', 0.95);
-            const anchor = document.createElement('a');
-            anchor.download = 'KurdFaceStudio_Output.jpg';
-            anchor.href = url;
-            anchor.click();
         }
     </script>
 </body>
