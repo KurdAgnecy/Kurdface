@@ -3,356 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kurd Face - كورد فەیس</title>
-    <!-- Tailwind CSS for modern & premium UI -->
+    <title>Kurd Face Studio - کـورد ئـەجێنسـی</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&display=swap');
-        body {
-            font-family: 'Noto Kufi Arabic', sans-serif;
-            background-color: #0b0f19;
-            color: #f3f4f6;
+        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #121212; color: #ffffff; user-select: none; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #1f1f1f; }
+        ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 4px; }
+
+        /* Editing Canvas Setup */
+        .workspace-container {
+            background-image: linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
-        /* Custom scrollbar for beautiful styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+
+        /* Filter Classes */
+        .filter-basis { filter: contrast(1.1) brightness(1.05); }
+        .filter-maple { filter: sepia(0.4) saturate(1.4) hue-rotate(-10deg); }
+        .filter-breeze { filter: hue-rotate(15deg) saturate(1.2) brightness(1.1); }
+        .filter-mojito { filter: saturate(1.5) contrast(1.1) hue-rotate(5deg); }
+        .filter-retro { filter: sepia(0.6) contrast(1.2) brightness(0.9); }
+        .filter-beauty { filter: brightness(1.1) contrast(1.05) blur(0.5px); }
+        
+        /* Range Slider Modernization */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
         }
-        ::-webkit-scrollbar-track {
-            background: #111827;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #fbbf24; cursor: pointer; margin-top: -6px;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 10px;
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #3f3f46; border-radius: 2px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
+
+        .active-tab { color: #fbbf24; border-bottom: 2px solid #fbbf24; }
+        .active-sub { background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between overflow-x-hidden select-none">
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- Header Section -->
-    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+    <!-- Top Navbar -->
+    <header class="bg-[#18181b] border-b border-[#27272a] p-3 flex justify-between items-center z-10 shrink-0">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Kurd Face</h1>
-                <p class="text-xs text-amber-500 font-medium">سۆفتوێری پێشکەوتووی دەستکاری دەموچاو</p>
-            </div>
+            <div class="bg-amber-500 text-black p-1.5 rounded-lg font-bold">KF</div>
+            <h1 class="text-lg font-bold">Kurd Face</h1>
         </div>
-        <div class="flex items-center gap-2">
-            <label for="imageUpload" class="cursor-pointer bg-gray-800 hover:bg-gray-700 transition px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 border border-gray-700">
-                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                بارکردنی وێنە
+        <div class="flex gap-2 text-sm">
+            <button onclick="loadDefaultImage('girl')" class="bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded border border-zinc-700">وێنەی کچ</button>
+            <button onclick="loadDefaultImage('boy')" class="bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded border border-zinc-700">وێنەی کوڕ</button>
+            <label class="bg-amber-500 hover:bg-amber-600 text-black px-4 py-1.5 rounded font-semibold cursor-pointer transition">
+                بارکردن
+                <input type="file" id="uploadInput" accept="image/*" class="hidden" onchange="handleUpload(event)">
             </label>
-            <input type="file" id="imageUpload" accept="image/*" class="hidden">
-            <button onclick="resetAll()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-lg transition border border-red-500/20" title="پاککردنەوەی هەموو مۆدیفیکەیشنەکان">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18"></path></svg>
-            </button>
         </div>
     </header>
 
     <!-- Main Workspace -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
         
-        <!-- Left Side: Image Preview Frame -->
-        <div class="lg:col-span-7 xl:col-span-8 bg-gray-950 rounded-2xl border border-gray-800 p-4 h-[500px] md:h-[600px] flex flex-col justify-center items-center relative overflow-hidden shadow-inner bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
-            <div id="imageWrapper" class="relative max-w-full max-h-full overflow-hidden rounded-xl transition-all duration-200 ease-out flex justify-center items-center">
-                <!-- Default Avatar Placeholder / Interactive Image Viewport -->
-                <img id="previewImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop" alt="Kurd Face Viewport" class="max-w-full max-h-[450px] md:h-[520px] object-contain transition-all duration-150 ease-out select-none pointer-events-none">
-                <!-- Live Dynamic CSS Makeup Overlays inside the DOM -->
-                <div id="lipstickOverlay" class="absolute inset-0 pointer-events-none mix-blend-multiply opacity-0 transition-all duration-300 rounded-xl" style="background: radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 25%);"></div>
-                <div id="blushOverlay" class="absolute inset-0 pointer-events-none mix-blend-color-burn opacity-0 transition-all duration-300 rounded-xl" style="background: radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 40%);"></div>
-            </div>
-            
-            <!-- Floating Image Info -->
-            <div class="absolute bottom-4 left-4 bg-gray-900/80 backdrop-blur text-xs px-3 py-1.5 rounded-full border border-gray-800 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-gray-400">سیستەمی ڕێندەری ڕاستەوخۆ جێگیرە</span>
+        <!-- Center Image Preview Area -->
+        <div class="flex-1 workspace-container flex items-center justify-center relative overflow-hidden p-4 h-full" id="canvasContainer">
+            <div id="imageWrapper" class="relative shadow-2xl transition-all duration-200" style="width: auto; height: 100%; display: flex; align-items: center; justify-content: center;">
+                <img id="mainImage" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop" class="max-w-full max-h-full object-contain transition-all duration-200" alt="Preview" crossorigin="anonymous">
+                
+                <!-- Drawing Canvas for Magic Eraser -->
+                <canvas id="drawCanvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-50 z-20"></canvas>
+                
+                <!-- Logo Watermark Overlay -->
+                <div id="watermark" class="absolute bottom-4 right-4 opacity-0 transition-opacity z-10">
+                    <img src="https://ui-avatars.com/api/?name=Kurd+Agency&background=fbbf24&color=000" class="w-16 rounded-lg opacity-80 shadow-lg">
+                </div>
+
+                <!-- Makeup Overlays (Simulated via CSS gradients) -->
+                <div id="lipstickOverlay" class="absolute inset-0 pointer-events-none mix-blend-multiply opacity-0 transition-all z-10"></div>
+                <div id="blushOverlay" class="absolute inset-0 pointer-events-none mix-blend-overlay opacity-0 transition-all z-10"></div>
             </div>
         </div>
 
-        <!-- Right Side: Advanced Controls Console -->
-        <div class="lg:col-span-5 xl:col-span-4 bg-gray-900/40 rounded-2xl border border-gray-800 flex flex-col overflow-hidden h-[600px]">
+        <!-- Right / Bottom Sidebar Tools Panel -->
+        <div class="w-full lg:w-96 bg-[#18181b] border-l border-[#27272a] flex flex-col shrink-0 h-1/2 lg:h-full">
             
-            <!-- Level 1 Menu: Core Category Selection (Face vs Makeup) -->
-            <div class="grid grid-cols-2 border-b border-gray-800 bg-gray-950 p-2 gap-2">
-                <button id="btnMainFace" onclick="switchMainMenu('face')" class="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10">
-                    <!-- Face Outline SVG -->
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10a6 6 0 0 0-12 0c0 4.97 4 9 9 9s9-4.03 9-9Z"/><path d="M12 10v4M9 11h.01M15 11h.01"/></svg>
-                    دەموچاو (Face)
-                </button>
-                <button id="btnMainMakeup" onclick="switchMainMenu('makeup')" class="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900">
-                    <!-- Makeup/Lipstick SVG -->
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a7 7 0 0 0 7 7Z"/><path d="M5 11h14M12 3v8"/></svg>
-                    مەیک ئەپ (Makeup)
-                </button>
+            <!-- Main Tool Categories -->
+            <div class="flex overflow-x-auto border-b border-[#27272a] shrink-0 p-2 gap-4 text-sm font-semibold text-zinc-400 no-scrollbar">
+                <button class="menu-btn active-tab pb-2 whitespace-nowrap" onclick="switchMenu('edit', this)">بڕین و ڕێکخستن</button>
+                <button class="menu-btn pb-2 whitespace-nowrap" onclick="switchMenu('face', this)">دەموچاو</button>
+                <button class="menu-btn pb-2 whitespace-nowrap" onclick="switchMenu('makeup', this)">مەیک ئەپ</button>
+                <button class="menu-btn pb-2 whitespace-nowrap" onclick="switchMenu('filters', this)">فلتەرەکان</button>
+                <button class="menu-btn pb-2 whitespace-nowrap text-amber-500" onclick="switchMenu('ai', this)">تایبەتمەندی AI</button>
             </div>
 
-            <!-- Level 2 Sub-Menu: Specific Facial Structural Parts (Only visible under 'Face') -->
-            <div id="faceSubTabs" class="flex gap-2 overflow-x-auto p-3 bg-gray-950/60 border-b border-gray-800/80 scrollbar-none">
-                <button onclick="switchFaceSubTab('shape')" id="tab-shape" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path></svg>
-                    شێوە (Shape)
-                </button>
-                <button onclick="switchFaceSubTab('eyebrows')" id="tab-eyebrows" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9a2 2 0 01-2 2H6l-2-2m0 0l2-2h6a2 2 0 012 2z"></path></svg>
-                    برۆکان
-                </button>
-                <button onclick="switchFaceSubTab('eyes')" id="tab-eyes" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    چاوەکان
-                </button>
-                <button onclick="switchFaceSubTab('nose')" id="tab-nose" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v14m0 0a3 3 0 11-6 0m6 0a3 3 0 116 0"></path></svg>
-                    لوت
-                </button>
-                <button onclick="switchFaceSubTab('mouth')" id="tab-mouth" class="sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8 8 8 0 018 8m-16 0h16M12 20a8 8 0 008-8m-8 8a8 8 0 01-8-8"></path></svg>
-                    دەم
-                </button>
-            </div>
-
-            <!-- Level 3 Control Panels Inside View Containers -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-5" id="controlsContainer">
-                <!-- Dynamically populated container via state managers -->
+            <!-- Dynamic Tool Content Area -->
+            <div id="toolPanel" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+                <!-- Content injected via JS -->
             </div>
             
         </div>
     </main>
 
-    <!-- Footer Branding Component -->
-    <footer class="border-t border-gray-800 bg-gray-950 py-3 px-6 text-center text-xs text-gray-500 tracking-wide">
-        <div>دروستکراوە بە <span class="text-red-500">♥️</span> لە لایەن <span class="text-amber-500 font-bold">کورد ئەجێنسی (Kurd Agency)</span></div>
+    <footer class="bg-[#121212] p-1 text-center text-[10px] text-zinc-600 shrink-0">
+        Engineered by Kurd Agency - Paiwast Ali
     </footer>
 
-    <!-- App Engineering core logic execution architecture -->
     <script>
-        // Comprehensive Slider Structural Configuration State Archetype (Exact match to images)
-        const appState = {
-            currentMenu: 'face', // 'face' or 'makeup'
-            currentFaceSubTab: 'shape', // 'shape', 'eyebrows', 'eyes', 'nose', 'mouth'
-            sliders: {
-                // Face Subcategory Configurations
-                shape: {
-                    slim: { label: 'باریککردن (Slim)', val: 0, min: -30, max: 30, unit: '%' },
-                    width: { label: 'پانی دەموچاو (Width)', val: 0, min: -25, max: 25, unit: '%' },
-                    temples: { label: 'لاجانگ (Temples)', val: 0, min: -20, max: 20, unit: '%' },
-                    cheekbones: { label: 'کۆڵەکەی ڕوومەت (Cheekbones)', val: 0, min: -30, max: 30, unit: '%' },
-                    jaw: { label: 'شەویلگە (Jaw)', val: 0, min: -20, max: 20, unit: '%' },
-                    vshape: { label: 'شێوەی ڤی (V-Shape)', val: 0, min: 0, max: 40, unit: '%' },
-                    chin: { label: 'چەناگە (Chin)', val: 0, min: -25, max: 25, unit: '%' }
-                },
-                eyebrows: {
-                    thickness: { label: 'ئەستووری (Thickness)', val: 100, min: 50, max: 150, unit: '%' },
-                    length: { label: 'درێژی (Length)', val: 100, min: 70, max: 130, unit: '%' },
-                    lift: { label: 'بەرزکردنەوە (Lift)', val: 0, min: -20, max: 20, unit: 'px' },
-                    peak: { label: 'لوتکە (Peak)', val: 0, min: -15, max: 15, unit: 'px' },
-                    tilt: { label: 'لاربوونەوە (Tilt)', val: 0, min: -15, max: 15, unit: 'deg' },
-                    distance: { label: 'دووری نێوانیان (Distance)', val: 0, min: -20, max: 20, unit: 'px' }
-                },
-                eyes: {
-                    size: { label: 'قەبارەی چاو (Size)', val: 100, min: 80, max: 130, unit: '%' },
-                    lift: { label: 'بەرەو سەرەوە (Lift)', val: 0, min: -15, max: 15, unit: 'px' },
-                    height: { label: 'بەرزایی چاو (Height)', val: 100, min: 70, max: 130, unit: '%' },
-                    width: { label: 'پانی چاو (Width)', val: 100, min: 70, max: 130, unit: '%' },
-                    tilt: { label: 'لاربوونەوە (Tilt)', val: 0, min: -10, max: 10, unit: 'deg' },
-                    distance: { label: 'دووری چاوەکان (Distance)', val: 0, min: -25, max: 25, unit: 'px' },
-                    pupil: { label: 'بیلبیلی چاو (Pupil)', val: 100, min: 80, max: 140, unit: '%' }
-                },
-                nose: {
-                    size: { label: 'قەبارەی لوت (Size)', val: 100, min: 75, max: 125, unit: '%' },
-                    width: { label: 'پانی لوت (Width)', val: 100, min: 70, max: 130, unit: '%' },
-                    tip: { label: 'سەری لوت (Tip)', val: 0, min: -15, max: 15, unit: 'px' },
-                    wing: { label: 'باڵەکانی لوت (Wing)', val: 100, min: 80, max: 120, unit: '%' },
-                    bridge: { label: 'پردی لوت (Bridge)', val: 0, min: -10, max: 10, unit: 'px' },
-                    lift: { label: 'بەرزکردنەوەی لوت (Lift)', val: 0, min: -15, max: 15, unit: 'px' }
-                },
-                mouth: {
-                    size: { label: 'قەبارەی دەم (Size)', val: 100, min: 80, max: 125, unit: '%' },
-                    lift: { label: 'بەرەو سەرەوە (Lift)', val: 0, min: -15, max: 15, unit: 'px' },
-                    width: { label: 'پانی دەم (Width)', val: 100, min: 80, max: 120, unit: '%' },
-                    upperLip: { label: 'لێوی سەرەوە (Upper Lip)', val: 100, min: 70, max: 140, unit: '%' },
-                    lowerLip: { label: 'لێوی خوارەوە (Lower Lip)', val: 100, min: 70, max: 140, unit: '%' },
-                    smile: { label: 'پێکەنین (Smile)', val: 0, min: 0, max: 30, unit: 'px' }
-                },
-                // Premium Makeup Module Data Nodes
-                makeup: {
-                    lipstick: { label: 'سووراو (Lipstick intensity)', val: 0, min: 0, max: 100, unit: '%' },
-                    blush: { label: 'ڕوومەتگەشێن (Blush Effect)', val: 0, min: 0, max: 100, unit: '%' },
-                    eyeshadow: { label: 'سێبەری چاو (Eyeshadow Volume)', val: 0, min: 0, max: 100, unit: '%' },
-                    eyeliner: { label: 'کل کێشان (Eyeliner Depth)', val: 0, min: 0, max: 100, unit: '%' },
-                    eyelashes: { label: 'برژانگی درێژ (Eyelashes Scale)', val: 0, min: 0, max: 100, unit: '%' }
-                }
-            }
+        // Global State Structure Based on Provided Screenshots
+        const state = {
+            activeMenu: 'edit',
+            imageSettings: {
+                ratio: 'auto', // 1:1, 4:5, 16:9, etc.
+                rotate: 0,
+                scaleX: 1, // Flips
+                scaleY: 1
+            },
+            face: {
+                shape: { slim: 0, width: 0, jaw: 0, chin: 0 },
+                eyes: { size: 0, width: 0, height: 0, distance: 0 },
+                nose: { size: 0, width: 0, bridge: 0 }
+            },
+            makeup: {
+                lipstick: { style: 'none', intensity: 0, color: 'rgba(200, 50, 50, ' },
+                blush: { style: 'none', intensity: 0 },
+                eyeshadow: { style: '01', intensity: 0 }
+            },
+            filter: 'none',
+            drawMode: false
         };
 
-        // App Initialization Vector
-        document.addEventListener('DOMContentLoaded', () => {
-            renderControls();
-            setupImageUploader();
-        });
-
-        // Switch main menu layout contextual frameworks
-        function switchMainMenu(menuType) {
-            appState.currentMenu = menuType;
-            
-            const btnFace = document.getElementById('btnMainFace');
-            const btnMakeup = document.getElementById('btnMainMakeup');
-            const subTabs = document.getElementById('faceSubTabs');
-
-            if (menuType === 'face') {
-                btnFace.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10";
-                btnMakeup.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900";
-                subTabs.classList.remove('hidden');
-            } else {
-                btnMakeup.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/10";
-                btnFace.className = "py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition duration-200 text-gray-400 hover:text-white hover:bg-gray-900";
-                subTabs.classList.add('hidden');
-            }
-            renderControls();
-        }
-
-        // Subcategory UI Context Exchanger
-        function switchFaceSubTab(subTab) {
-            appState.currentFaceSubTab = subTab;
-            document.querySelectorAll('.sub-tab-btn').forEach(btn => {
-                btn.className = "sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800 transition";
-            });
-            const activeTab = document.getElementById(`tab-${subTab}`);
-            if (activeTab) {
-                activeTab.className = "sub-tab-btn shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 transition";
-            }
-            renderControls();
-        }
-
-        // Realtime Render Loop for control panels
-        function renderControls() {
-            const container = document.getElementById('controlsContainer');
-            container.innerHTML = '';
-            
-            const activePool = appState.currentMenu === 'face' ? appState.sliders[appState.currentFaceSubTab] : appState.sliders.makeup;
-
-            Object.keys(activePool).forEach(key => {
-                const setting = activePool[key];
-                
-                const controlWrapper = document.createElement('div');
-                controlWrapper.className = "bg-gray-950/40 border border-gray-800/60 rounded-xl p-4 space-y-2 hover:border-gray-700/60 transition";
-                
-                controlWrapper.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-gray-300 flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                            ${setting.label}
-                        </span>
-                        <span class="text-xs font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded" id="val-${key}">${setting.val}${setting.unit}</span>
+        const menus = {
+            'edit': `
+                <div class="text-xs text-zinc-400 mb-2">قەبارەکان (Ratio)</div>
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <button onclick="setRatio('auto')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">ئاسایی</button>
+                    <button onclick="setRatio('1/1')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">1:1 (IG)</button>
+                    <button onclick="setRatio('4/5')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">4:5</button>
+                    <button onclick="setRatio('16/9')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">16:9 (YT)</button>
+                    <button onclick="setRatio('9/16')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">9:16 (TikTok)</button>
+                    <button onclick="setRatio('3/4')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">3:4</button>
+                    <button onclick="setRatio('4/3')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">4:3</button>
+                    <button onclick="setRatio('2.35/1')" class="bg-zinc-800 p-2 rounded text-xs hover:bg-amber-500 hover:text-black transition">Film</button>
+                </div>
+                <div class="text-xs text-zinc-400 mb-2">سوڕاندن و پێچەوانە (Rotate)</div>
+                <div class="flex gap-2">
+                    <button onclick="rotateImage()" class="flex-1 bg-zinc-800 p-2 rounded text-xs flex justify-center items-center gap-1 hover:bg-zinc-700">سوڕاندن 90°</button>
+                    <button onclick="flipImage('h')" class="flex-1 bg-zinc-800 p-2 rounded text-xs flex justify-center items-center gap-1 hover:bg-zinc-700">ئاسۆیی</button>
+                    <button onclick="flipImage('v')" class="flex-1 bg-zinc-800 p-2 rounded text-xs flex justify-center items-center gap-1 hover:bg-zinc-700">ستوونی</button>
+                </div>
+            `,
+            'face': `
+                <div class="flex overflow-x-auto gap-2 pb-2 text-xs mb-4 no-scrollbar border-b border-zinc-800">
+                    <button class="bg-zinc-800 px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 shrink-0">شێوە (Shape)</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">چاو (Eyes)</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">لوت (Nose)</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">دەم (Mouth)</button>
+                </div>
+                <!-- Sliders -->
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span>پانی دەموچاو</span><span id="val-f-width">0</span></div>
+                        <input type="range" min="-50" max="50" value="0" oninput="updateFace('width', this.value)">
                     </div>
-                    <input type="range" min="${setting.min}" max="${setting.max}" value="${setting.val}" 
-                        class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-amber-500 focus:outline-none transition-all"
-                        oninput="updateValue('${key}', this.value)">
-                `;
-                container.appendChild(controlWrapper);
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span>شەویلگە (Jaw)</span><span id="val-f-jaw">0</span></div>
+                        <input type="range" min="-50" max="50" value="0" oninput="updateFace('jaw', this.value)">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span>قەبارەی چاو</span><span id="val-f-eyes">0</span></div>
+                        <input type="range" min="-30" max="30" value="0" oninput="updateFace('eyes', this.value)">
+                    </div>
+                </div>
+                <p class="text-[10px] text-zinc-500 mt-4 text-center">بۆ بینینی گۆڕانکاری، سلایدەرەکان بجوڵێنە. (بە CSS ڕێکخراوە)</p>
+            `,
+            'makeup': `
+                <div class="flex overflow-x-auto gap-2 pb-2 text-xs mb-4 no-scrollbar border-b border-zinc-800" id="makeupTabs">
+                    <button onclick="renderMakeupOptions('lipstick', this)" class="sub-tab bg-zinc-800 px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 shrink-0">سووراو (Lipstick)</button>
+                    <button onclick="renderMakeupOptions('eyeshadow', this)" class="sub-tab bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">سێبەری چاو (Eye Shadow)</button>
+                    <button onclick="renderMakeupOptions('blush', this)" class="sub-tab bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">ڕوومەتگەشێن (Blush)</button>
+                    <button onclick="renderMakeupOptions('eyebrow', this)" class="sub-tab bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">برۆ (Eyebrow)</button>
+                </div>
+                <div id="makeupOptionsContainer" class="grid grid-cols-5 gap-2 mb-4"></div>
+                
+                <div class="mt-auto">
+                    <div class="flex justify-between text-xs mb-1 text-amber-500"><span>تێربوون (Intensity)</span><span id="makeup-val">0%</span></div>
+                    <input type="range" min="0" max="100" value="0" id="makeupSlider" oninput="updateMakeupIntensity(this.value)">
+                </div>
+            `,
+            'filters': `
+                <div class="flex overflow-x-auto gap-2 pb-2 text-xs mb-4 no-scrollbar border-b border-zinc-800">
+                    <button class="bg-zinc-800 px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 shrink-0">Basis</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">Maple</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">Breeze</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">Mojito</button>
+                    <button class="bg-zinc-800/50 px-3 py-1.5 rounded-full text-zinc-400 shrink-0">Beauty</button>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div onclick="applyFilter('none')" class="cursor-pointer text-center group">
+                        <div class="w-full aspect-square bg-zinc-800 rounded-lg mb-1 group-hover:border-2 border-amber-500 flex items-center justify-center text-xs">ئاسایی</div>
+                    </div>
+                    <div onclick="applyFilter('basis')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-basis">
+                        <div class="text-[10px] text-zinc-400">Basis (B1-B6)</div>
+                    </div>
+                    <div onclick="applyFilter('maple')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-maple">
+                        <div class="text-[10px] text-zinc-400">Maple (MP)</div>
+                    </div>
+                    <div onclick="applyFilter('breeze')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-breeze">
+                        <div class="text-[10px] text-zinc-400">Breeze (WF)</div>
+                    </div>
+                    <div onclick="applyFilter('mojito')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-mojito">
+                        <div class="text-[10px] text-zinc-400">Mojito (MO)</div>
+                    </div>
+                    <div onclick="applyFilter('beauty')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-beauty">
+                        <div class="text-[10px] text-zinc-400">Beauty (MF)</div>
+                    </div>
+                    <div onclick="applyFilter('retro')" class="cursor-pointer text-center group">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="w-full aspect-square object-cover rounded-lg mb-1 group-hover:border-2 border-amber-500 filter-retro">
+                        <div class="text-[10px] text-zinc-400">Retro</div>
+                    </div>
+                </div>
+            `,
+            'ai': `
+                <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg mb-4">
+                    <h3 class="text-amber-500 font-bold text-sm mb-1">ئامرازەکانی زیرەکی دەستکرد</h3>
+                    <p class="text-[10px] text-zinc-400">ئەم بەشانە پێویستیان بە سێرڤەر (API) هەیە بۆ ئیشکردنی تەواوەتی، لێرە ڕووکارەکەیمان ئامادە کردووە.</p>
+                </div>
+                
+                <button onclick="toggleDrawMode()" id="eraserBtn" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 p-3 rounded-lg text-sm flex items-center gap-3 mb-3 transition">
+                    <span class="text-xl">🖌️</span>
+                    <div class="text-right">
+                        <div class="font-bold">سڕینەوەی شتەکان (Magic Eraser)</div>
+                        <div class="text-[10px] text-zinc-400">بە دەست دیاری بکە بۆ سڕینەوە</div>
+                    </div>
+                </button>
+                
+                <button onclick="removeBG()" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 p-3 rounded-lg text-sm flex items-center gap-3 mb-3 transition">
+                    <span class="text-xl">✂️</span>
+                    <div class="text-right">
+                        <div class="font-bold">سڕینەوەی باکگراوند (BG Remove)</div>
+                        <div class="text-[10px] text-zinc-400">بە یەک کلیک پشتەوە دەسڕێتەوە</div>
+                    </div>
+                </button>
+
+                <button onclick="toggleLogo()" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 p-3 rounded-lg text-sm flex items-center gap-3 transition">
+                    <span class="text-xl">©️</span>
+                    <div class="text-right">
+                        <div class="font-bold">دانانی لۆگۆ (Watermark)</div>
+                        <div class="text-[10px] text-zinc-400">لۆگۆی کورد ئەجێنسی دەخاتە سەر وێنەکە</div>
+                    </div>
+                </button>
+            `
+        };
+
+        // Initialize UI
+        function switchMenu(menuName, btnElement) {
+            state.activeMenu = menuName;
+            document.querySelectorAll('.menu-btn').forEach(btn => {
+                btn.classList.remove('active-tab');
+                btn.classList.add('text-zinc-400');
             });
+            btnElement.classList.add('active-tab');
+            btnElement.classList.remove('text-zinc-400');
+            
+            document.getElementById('toolPanel').innerHTML = menus[menuName];
+
+            if(menuName === 'makeup') {
+                renderMakeupOptions('lipstick', document.querySelector('.sub-tab'));
+            }
         }
 
-        // Slider Value Multiplier & Real-time Matrix Transformation Pipe
-        function updateValue(key, value) {
-            const numValue = parseInt(value);
-            
-            if (appState.currentMenu === 'face') {
-                appState.sliders[appState.currentFaceSubTab][key].val = numValue;
-            } else {
-                appState.sliders.makeup[key].val = numValue;
-            }
-
-            const badge = document.getElementById(`val-${key}`);
-            if (badge) {
-                const unit = appState.currentMenu === 'face' ? appState.sliders[appState.currentFaceSubTab][key].unit : appState.sliders.makeup[key].unit;
-                badge.innerText = value + unit;
-            }
-            
-            applyLiveTransformations();
-        }
-
-        // Complex DOM Transformation & Overlay Render Layer Matrix
-        function applyLiveTransformations() {
+        // Handle Image Ratio & Edits
+        function setRatio(ratioStr) {
             const wrapper = document.getElementById('imageWrapper');
-            const img = document.getElementById('previewImage');
-            const lipstick = document.getElementById('lipstickOverlay');
-            const blush = document.getElementById('blushOverlay');
-
-            // Extraction metrics data structures
-            const shape = appState.sliders.shape;
-            const eyebrows = appState.sliders.eyebrows;
-            const eyes = appState.sliders.eyes;
-            const nose = appState.sliders.nose;
-            const mouth = appState.sliders.mouth;
-            const makeup = appState.sliders.makeup;
-
-            // Generate CSS filter matrices to mock live warp parameters on canvas wrappers
-            const wrapperScaleX = 1 - (shape.slim.val / 150) + (shape.width.val / 200);
-            const wrapperScaleY = 1 + (shape.chin.val / 250);
-            const skewX = shape.jaw.val / 8;
-
-            wrapper.style.transform = `scale(${wrapperScaleX}, ${wrapperScaleY}) skewX(${skewX}deg)`;
-
-            // Mimic eye, eyebrow modifications via local graphical filter shifts
-            const brightnessAdjustment = 100 + (makeup.eyeshadow.val / 4);
-            const contrastAdjustment = 100 + (makeup.eyeliner.val / 5);
-            const hueShift = (makeup.lipstick.val / 10);
-
-            img.style.filter = `brightness(${brightnessAdjustment}%) contrast(${contrastAdjustment}%) saturate(${100 + hueShift}%)`;
-
-            // Active makeup color canvas blending simulator blocks
-            if (makeup.lipstick.val > 0) {
-                lipstick.style.opacity = makeup.lipstick.val / 100;
+            const img = document.getElementById('mainImage');
+            if(ratioStr === 'auto') {
+                wrapper.style.aspectRatio = 'auto';
+                wrapper.style.width = 'auto';
+                wrapper.style.height = '100%';
+                img.style.objectFit = 'contain';
             } else {
-                lipstick.style.opacity = 0;
-            }
-
-            if (makeup.blush.val > 0) {
-                blush.style.opacity = makeup.blush.val / 100;
-            } else {
-                blush.style.opacity = 0;
+                wrapper.style.aspectRatio = ratioStr;
+                wrapper.style.width = '100%';
+                wrapper.style.height = '100%';
+                img.style.objectFit = 'cover';
             }
         }
 
-        // External Asset Pipeline Uploader Config
-        function setupImageUploader() {
-            const fileInput = document.getElementById('imageUpload');
-            const previewImage = document.getElementById('previewImage');
+        function rotateImage() {
+            state.imageSettings.rotate += 90;
+            applyTransform();
+        }
 
-            fileInput.addEventListener('change', function(e) {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewImage.src = e.target.result;
-                        resetAll();
-                    };
-                    reader.readAsDataURL(this.files[0]);
-                }
+        function flipImage(axis) {
+            if (axis === 'h') state.imageSettings.scaleX *= -1;
+            if (axis === 'v') state.imageSettings.scaleY *= -1;
+            applyTransform();
+        }
+
+        // Apply visual CSS transforms to simulate Face Editing & Rotations
+        function applyTransform() {
+            const img = document.getElementById('mainImage');
+            const r = state.imageSettings.rotate;
+            const sx = state.imageSettings.scaleX;
+            const sy = state.imageSettings.scaleY;
+            
+            // Face modification simulation via scale stretch
+            const faceWidthAdjust = 1 + (state.face.shape.width / 500);
+            const faceJawAdjust = 1 + (state.face.shape.jaw / 500);
+            
+            img.style.transform = `rotate(${r}deg) scaleX(${sx * faceWidthAdjust}) scaleY(${sy * faceJawAdjust})`;
+        }
+
+        function updateFace(param, val) {
+            document.getElementById(`val-f-${param}`).innerText = val;
+            if(param === 'width') state.face.shape.width = parseInt(val);
+            if(param === 'jaw') state.face.shape.jaw = parseInt(val);
+            applyTransform();
+        }
+
+        // Makeup Logic
+        function renderMakeupOptions(type, btnElement) {
+            document.querySelectorAll('.sub-tab').forEach(b => {
+                b.classList.remove('border', 'border-amber-500', 'text-amber-500');
+                b.classList.add('bg-zinc-800/50', 'text-zinc-400');
             });
-        }
+            btnElement.classList.add('border', 'border-amber-500', 'text-amber-500');
+            btnElement.classList.remove('bg-zinc-800/50', 'text-zinc-400');
 
-        // System Restructuring Pipeline (Hard Reset)
-        function resetAll() {
-            // Restore structural object state primitives
-            Object.keys(appState.sliders).forEach(cat => {
-                Object.keys(appState.sliders[cat]).forEach(key => {
-                    // Set default parameters gracefully
-                    if (['thickness', 'length', 'size', 'height', 'width', 'pupil', 'upperLip', 'lowerLip', 'wing'].includes(key)) {
-                        appState.sliders[cat][key].val = 100;
-                    } else {
-                        appState.sliders[cat][key].val = 0;
-                    }
+            const container = document.getElementById('makeupOptionsContainer');
+            let html = '';
+
+            if (type === 'lipstick') {
+                const colors = ['ND01', 'ND02', 'ND03', 'ND04', 'ND05', 'ND06'];
+                const hexs = ['#e5b0ad', '#db8e8f', '#d57d76', '#cc5b55', '#b74f44', '#9a2b2f'];
+                colors.forEach((c, i) => {
+                    html += `<button onclick="setMakeupStyle('lipstick', '${hexs[i]}')" class="aspect-square rounded-full border-2 border-zinc-700 hover:border-amber-500 shadow-lg" style="background-color: ${hexs[i]}"><span class="text-[8px] text-black font-bold mix-blend-overlay">${c}</span></button>`;
                 });
-            });
-            renderControls();
-            applyLiveTransformations();
+            } else if (type === 'eyeshadow' || type === 'eyebrow') {
+                const styles = ['01', '02', '03', '04', '05'];
+                styles.forEach(s => {
+                    html += `<button class="aspect-square bg-zinc-800 rounded-lg flex items-center justify-center text-xs border border-zinc-700 hover:border-amber-500">${s}</button>`;
+                });
+            }
+            container.innerHTML = html;
         }
+
+        function setMakeupStyle(type, colorHex) {
+            if(type === 'lipstick') {
+                const overlay = document.getElementById('lipstickOverlay');
+                // Simulate lipstick on image center bottom
+                overlay.style.background = `radial-gradient(ellipse at 50% 70%, ${colorHex} 0%, transparent 20%)`;
+                document.getElementById('makeupSlider').value = 50;
+                updateMakeupIntensity(50);
+            }
+        }
+
+        function updateMakeupIntensity(val) {
+            document.getElementById('makeup-val').innerText = val + '%';
+            document.getElementById('lipstickOverlay').style.opacity = val / 100;
+        }
+
+        // Filters
+        function applyFilter(filterName) {
+            const img = document.getElementById('mainImage');
+            img.className = "max-w-full max-h-full object-contain transition-all duration-200"; // Reset
+            if(filterName !== 'none') {
+                img.classList.add(`filter-${filterName}`);
+            }
+        }
+
+        // AI Tools Logic
+        function toggleLogo() {
+            const logo = document.getElementById('watermark');
+            logo.style.opacity = logo.style.opacity === '1' ? '0' : '1';
+        }
+
+        function removeBG() {
+            // Simulated effect
+            const img = document.getElementById('mainImage');
+            img.style.filter = "drop-shadow(0 0 20px rgba(251, 191, 36, 0.5))";
+            alert("لەم ڤێرژنەدا تەنها ڕووکارە. بڕینەوەی ڕاستەقینە پێویستی بە بەستنەوەیە بە سێرڤەری زیرەکی دەستکردەوە (وەک remove.bg API).");
+        }
+
+        // Magic Eraser Mask Drawing
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function toggleDrawMode() {
+            state.drawMode = !state.drawMode;
+            const btn = document.getElementById('eraserBtn');
+            const img = document.getElementById('mainImage');
+            
+            if(state.drawMode) {
+                btn.classList.replace('bg-zinc-800', 'bg-amber-500');
+                btn.classList.replace('text-white', 'text-black');
+                canvas.style.pointerEvents = 'auto';
+                canvas.width = img.clientWidth;
+                canvas.height = img.clientHeight;
+            } else {
+                btn.classList.replace('bg-amber-500', 'bg-zinc-800');
+                btn.classList.replace('text-black', 'text-white');
+                canvas.style.pointerEvents = 'none';
+            }
+        }
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mouseup', () => { isDrawing = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineWidth = 25;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)'; // Red mask
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        // Base Setup
+        function loadDefaultImage(type) {
+            const img = document.getElementById('mainImage');
+            if (type === 'girl') img.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop';
+            if (type === 'boy') img.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop';
+            resetCanvas();
+        }
+
+        function handleUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('mainImage').src = e.target.result;
+                    resetCanvas();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('lipstickOverlay').style.opacity = 0;
+            state.imageSettings = { ratio: 'auto', rotate: 0, scaleX: 1, scaleY: 1 };
+            applyTransform();
+            applyFilter('none');
+        }
+
+        // Init
+        document.getElementById('toolPanel').innerHTML = menus['edit'];
     </script>
 </body>
 </html>
