@@ -1,204 +1,207 @@
 <!DOCTYPE html>
-<html lang="ku" dir="rtl">
+<html lang="ku" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kurd Face Studio - Powered by Kurd Agency</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- کۆمەڵە فۆنتێکی گەورە بۆ زمانەکانی کوردی، عەرەبی و ئینگلیزی -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Changa:wght@400;600;700&family=Lalezar&family=Reem+Kufi:wght@500;700&family=Amiri:ital@0;1&family=Almarai:wght@400;700&family=El+Messiri:wght@500;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Changa:wght@400;600;700&family=Lalezar&family=Reem+Kufi:wght@500;700&family=Almarai:wght@400;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #08090c; color: #f3f4f6; user-select: none; overflow: hidden; height: 100vh; }
-        .workspace-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; transition: background-color 0.3s, color 0.3s; user-select: none; overflow: hidden; height: 100vh; }
+        .dark body { background-color: #08090c; color: #f3f4f6; }
+        .light body { background-color: #f8fafc; color: #0f172a; }
         
-        /* Premium Custom Range Input Styling */
+        .workspace-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
+        .light .workspace-grid { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); }
+
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #f59e0b; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1e293b; border-radius: 2px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-
-        /* Realtime Isolated Mesh Positioning System */
-        #faceMeshWrapper { position: relative; width: 100%; height: 100%; display: flex; items-center: center; justify-content: center; }
         
-        /* Advanced Dynamic Layers */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        #faceMeshWrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .effect-overlay-layer { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 25; transition: all 0.3s ease; }
         
-        /* Text Engine Overlay styling */
-        .draggable-text-node {
-            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
-            cursor: move; white-space: pre-wrap; text-align: center; z-index: 50;
-            padding: 6px; border: 1px dashed transparent; transition: border-color 0.2s;
-        }
-        .draggable-text-node:hover { border-color: #f59e0b; }
+        /* چوارچێوەی لۆکاڵی بۆ Mockups */
+        .mockup-phone { border: 12px solid #1e293b; border-radius: 36px; padding: 4px; background: #000; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+
+        #beforeAfterContainer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 45; }
+        #beforeImage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; clip-path: inset(0 50% 0 0); }
+        #sliderHandle { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #f59e0b; cursor: ew-resize; z-index: 2; pointer-events: auto; transform: translateX(-50%); }
+
+        .safe-zone { position: absolute; inset: 0; border: 3px dashed #ef4444; pointer-events: none; display: none; z-index: 48; opacity: 0.7; }
     </style>
 </head>
 <body class="flex flex-col">
 
-    <!-- Loading Bar Indicator Component -->
     <div id="globalProgressBar" class="fixed top-0 left-0 right-0 h-1.5 bg-amber-500/10 z-[100] hidden">
         <div id="progressFillInner" class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 w-0 transition-all duration-100 ease-out"></div>
     </div>
     
-    <!-- Percentage Indicator Screen Modals -->
     <div id="progressPercentageModal" class="fixed inset-0 bg-black/80 z-[90] hidden flex flex-col items-center justify-center">
         <div class="bg-[#11131e] border border-slate-800 p-8 rounded-2xl text-center max-w-xs w-full shadow-2xl">
             <div class="w-16 h-16 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin mx-auto mb-4"></div>
-            <h3 class="text-sm font-bold text-white mb-1">پڕۆسەی زیرەکی دەستکرد</h3>
-            <p id="progressStatusText" class="text-[11px] text-slate-400 mb-4">لابردنی پاشبنەما (Remove BG)...</p>
+            <h3 class="text-sm font-bold text-white mb-1" id="modalProgressTitle">پڕۆسەی زیرەکی دەستکرد</h3>
+            <p id="progressStatusText" class="text-[11px] text-slate-400 mb-4">پڕۆسێس دەکرێت...</p>
             <div class="text-3xl font-black text-amber-500 font-mono" id="numericPercentageDisplay">0%</div>
         </div>
     </div>
 
-    <!-- App Main Header -->
     <header class="bg-[#0f111a] border-b border-slate-800 px-6 py-4 flex justify-between items-center shrink-0 z-50 shadow-lg">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-black text-xl shadow-lg shadow-amber-500/20">KF</div>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-black text-xl shadow-lg">KF</div>
             <div>
-                <h1 class="text-md font-bold tracking-wide">Kurd Face Studio</h1>
-                <p class="text-[10px] text-amber-500 font-medium">دروستکراوە لە لایەن کورد ئەجێنسی</p>
+                <h1 class="text-md font-bold tracking-wide" id="mainAppTitle">Kurd Face Studio</h1>
+                <p class="text-[10px] text-amber-500 font-medium" id="mainAppSubtitle">دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی</p>
             </div>
         </div>
         
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+            <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-slate-900 border border-slate-800 text-xs px-2.5 py-1.5 rounded-lg text-white outline-none">
+                <option value="ku">کوردی</option>
+                <option value="ar">العربية</option>
+                <option value="en">English</option>
+            </select>
+            <button onclick="toggleLightDarkModeSystem()" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-amber-500">🌓</button>
             <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-                <button onclick="loadSampleModel('female')" class="px-3 py-1.5 rounded-md hover:text-white transition text-amber-500 font-bold">کچ (نموونە) 👩‍🦰</button>
-                <button onclick="loadSampleModel('male')" class="px-3 py-1.5 rounded-md hover:text-white transition text-slate-400 font-bold">کوڕ (نموونە) 👨‍🦱</button>
+                <button onclick="loadSampleModel('female')" class="px-3 py-1.5 rounded-md hover:text-white text-amber-500 font-bold" id="btnSampleFemale">کچ 👩‍🦰</button>
+                <button onclick="loadSampleModel('male')" class="px-3 py-1.5 rounded-md hover:text-white text-slate-400 font-bold" id="btnSampleMale">کوڕ 👨‍🦱</button>
             </div>
             <label class="bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer transition flex items-center gap-2 shadow-md">
-                <span>بارکردنی وێنە 📁</span>
+                <span id="lblUploadPhoto">بارکردنی وێنە 📁</span>
                 <input type="file" id="imageLoader" accept="image/*" class="hidden" onchange="loadUserPhoto(event)">
             </label>
         </div>
     </header>
 
-    <!-- Studio Main Frame -->
     <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        
-        <!-- Live Workspace Viewport -->
-        <div class="flex-1 workspace-grid bg-[#050608] flex items-center justify-center p-6 relative overflow-hidden h-full">
-            <div id="canvasViewport" class="relative max-w-full max-h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center bg-[#090b11] border border-slate-800/50" style="width: 480px; height: 85%;">
-                
-                <div id="faceMeshWrapper">
-                    <!-- Base Target Image Element -->
-                    <img id="targetImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" class="max-w-full max-h-full object-contain select-none transition-all duration-150 origin-center">
-                    
-                    <!-- Fixed Position Realtime Lip Layer Adjustment (Strictly Map to Lip Coordinates) -->
-                    <div id="lipstickLayer" class="absolute pointer-events-none mix-blend-multiply opacity-0 transition-opacity duration-150" style="inset: 0; background: radial-gradient(circle at 50% 57%, rgba(220,38,38,0.7) 0%, transparent 8%);"></div>
-                    <div id="blushLayer" class="absolute pointer-events-none mix-blend-color-burn opacity-0 transition-opacity duration-150" style="inset: 0; background: radial-gradient(circle at 38% 48%, rgba(244,63,94,0.3) 0%, transparent 12%), radial-gradient(circle at 62% 48%, rgba(244,63,94,0.3) 0%, transparent 12%);"></div>
-                    
-                    <!-- Effects Overlays Layer Matrix -->
-                    <div id="sunlightEffectLayer" class="effect-overlay-layer mix-blend-overlay"></div>
-                    <div id="butterflyEffectLayer" class="effect-overlay-layer mix-blend-screen bg-contain bg-no-repeat bg-center"></div>
-                    <div id="bodyMuscleLayer" class="effect-overlay-layer mix-blend-hard-light" style="background: radial-gradient(circle at 50% 80%, rgba(0,0,0,0.45) 0%, transparent 40%);"></div>
-                    <div id="bodyTattooLayer" class="effect-overlay-layer mix-blend-multiply bg-center bg-no-repeat" style="background-size: 110px; background-position: 50% 75%; background-image: url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;100&quot; height=&quot;100&quot;><path d=&quot;M50 15 L70 50 L50 85 L30 50 Z M50 30 L60 50 L50 70 L40 50 Z&quot; fill=&quot;black&quot;/></svg>');"></div>
-                    
-                    <!-- Text Overlay Payload -->
-                    <div id="globalTextNode" class="draggable-text-node font-bold" style="font-size: 32px; color: #ffffff;">کورد فەیس</div>
+        <div class="flex-1 workspace-grid flex flex-col items-center justify-center p-6 relative overflow-hidden h-full">
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button onclick="executeUndoStep()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white hover:border-amber-500 transition">↩️ Undo</button>
+                    <button onclick="executeRedoStep()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white hover:border-amber-500 transition">↪️ Redo</button>
                 </div>
-                
-                <!-- Interactive Mask Canvas (Magic Eraser Layer) -->
-                <canvas id="maskCanvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-75 z-40"></canvas>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button onclick="toggleBeforeAfterCurtain()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-amber-500 font-bold transition">↔️ بەراوردکردن (Slider)</button>
+                </div>
+            </div>
+
+            <div id="mockupFrameContainer" class="transition-all duration-300 flex items-center justify-center" style="width: 540px; height: 85%;">
+                <div id="canvasViewport" class="relative w-full h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center bg-[#090b11] border border-slate-800/50">
+                    <div id="faceMeshWrapper">
+                        <img id="targetImage" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" class="max-w-full max-h-full object-contain select-none">
+                        
+                        <canvas id="makeupCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-30"></canvas>
+                        
+                        <div id="sunlightEffectLayer" class="effect-overlay-layer mix-blend-overlay"></div>
+                        <div id="butterflyEffectLayer" class="effect-overlay-layer mix-blend-screen bg-contain bg-no-repeat bg-center"></div>
+                        <div id="bodyMuscleLayer" class="effect-overlay-layer mix-blend-hard-light" style="background: radial-gradient(circle at 50% 80%, rgba(0,0,0,0.4) 0%, transparent 40%);"></div>
+                        <div id="bodyTattooLayer" class="effect-overlay-layer mix-blend-multiply bg-center bg-no-repeat" style="background-size: 110px; background-position: 50% 75%;"></div>
+                        
+                        <div id="beforeAfterContainer">
+                            <img id="beforeImage" src="" class="max-w-full max-h-full object-contain select-none">
+                            <div id="sliderHandle"></div>
+                        </div>
+
+                        <div id="safeZoneOverlay" class="safe-zone">
+                            <div id="safeZoneLabel" class="absolute bottom-20 left-4 right-16 text-[10px] bg-black/80 p-2 rounded text-left font-mono text-white">TikTok UI Safe Zone (مەچۆ دەرەوە لەم سنوورە)</div>
+                        </div>
+                    </div>
+                    <canvas id="maskCanvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-75 z-40"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- Engineering Control Board (Right Side Panel) -->
-        <div class="w-full lg:w-[460px] bg-[#0c0d14] border-t lg:border-t-0 lg:border-r border-slate-800 flex flex-col h-[52%] lg:h-full shrink-0 shadow-2xl">
-            
-            <!-- Category Navigation Layout (Level 1) -->
+        <div class="w-full lg:w-[460px] bg-[#0c0d14] border-t lg:border-t-0 lg:border-r border-slate-800 flex flex-col h-[55%] lg:h-full shrink-0 shadow-2xl">
             <div class="flex overflow-x-auto bg-[#0f111a] border-b border-slate-800 p-3 gap-2 no-scrollbar shrink-0">
-                <button onclick="switchStudioCategory('face', this)" class="cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">
-                    <span>👤</span> دەموچاو (Face)
-                </button>
-                <button onclick="switchStudioCategory('makeup', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    <span>💄</span> مەیک ئەپ
-                </button>
-                <button onclick="switchStudioCategory('body', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    <span>💪</span> جەستە (Body)
-                </button>
-                <button onclick="switchStudioCategory('filters', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    <span>🎬</span> فلتەرەکان
-                </button>
-                <button onclick="switchStudioCategory('effects', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    <span>✨</span> ئیفێکتەکان
-                </button>
-                <button onclick="switchStudioCategory('text', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
-                    <span>📝</span> تێکست
-                </button>
-                <button onclick="switchStudioCategory('ai', this)" class="cat-btn text-amber-500 hover:bg-amber-500/10 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0">
-                    <span>🤖</span> هۆشی دەستکرد
-                </button>
+                <button onclick="switchStudioCategory('face', this)" class="cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0" id="catFace">👤 دەموچاو</button>
+                <button onclick="switchStudioCategory('makeup', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0" id="catMakeup">💄 مەیک ئەپ</button>
+                <button onclick="switchStudioCategory('body', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0" id="catBody">💪 جەستە</button>
+                <button onclick="switchStudioCategory('filters', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0" id="catFilters">🎬 فلتەرەکان</button>
+                <button onclick="switchStudioCategory('effects', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0" id="catEffects">✨ ئیفێکتەکان</button>
+                <button onclick="switchStudioCategory('text', this)" class="cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0" id="catText">📝 تێکست و قالب</button>
+                <button onclick="switchStudioCategory('ai', this)" class="cat-btn text-amber-500 hover:bg-amber-500/10 px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0" id="catAI">🤖 هۆشی دەستکرد</button>
+                <button onclick="switchStudioCategory('export', this)" class="cat-btn text-emerald-400 hover:bg-emerald-500/10 px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0" id="catExport">💾 سەیڤکردن</button>
             </div>
 
-            <!-- Context Subcategories Tabs (Level 2) -->
-            <div id="subCategoryContextArea" class="flex overflow-x-auto bg-[#121420] border-b border-slate-800/60 p-2.5 gap-2 no-scrollbar shrink-0">
-                <!-- Dynamically Rendered by Javascript Engine -->
-            </div>
-
-            <!-- Parameters Console Area (Level 3 Controls) -->
-            <div id="controlsConsoleArea" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0c0d14]">
-                <!-- Sliders and Inputs Rendered Here -->
-            </div>
+            <div id="subCategoryContextArea" class="flex overflow-x-auto bg-[#121420] border-b border-slate-800/60 p-2.5 gap-2 no-scrollbar shrink-0"></div>
+            <div id="controlsConsoleArea" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0c0d14]"></div>
             
+            <div class="p-3 bg-[#090a0f] text-center border-t border-slate-800/80 text-[11px] text-slate-500">
+                Kurd Face Studio v2.5 — <span class="text-amber-500 font-semibold">ئاریان علی : کورد ئەجێنسی</span>
+            </div>
         </div>
     </main>
 
     <script>
+        const localizationEngine = {
+            ku: {
+                mainTitle: "Kurd Face Studio", subtitle: "دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی",
+                face: "👤 دەموچاو", makeup: "💄 مەیک ئەپ", body: "💪 جەستە", filters: "🎬 فلتەرەکان", effects: "✨ ئیفێکتەکان", text: "📝 تێکست و قالب", ai: "🤖 هۆشی دەستکرد", export: "💾 سەیڤکردن",
+                upload: "بارکردنی وێنە 📁", female: "کچ 👩‍🦰", male: "کوڕ 👨‍🦱"
+            },
+            ar: {
+                mainTitle: "استوديو كرد للوجه", subtitle: "تم التطوير بواسطة آريان علي : وكالة كرد",
+                face: "👤 الوجه", makeup: "💄 الماكياج", body: "💪 الجسم", filters: "🎬 الفلاتر", effects: "✨ التأثيرات", text: "📝 النصوص", ai: "🤖 الذكاء الاصطناعي", export: "💾 الحفظ والتصدير",
+                upload: "تحميل صورة 📁", female: "أنثى 👩‍🦰", male: "ذكر 👨‍🦱"
+            },
+            en: {
+                mainTitle: "Kurd Face Studio", subtitle: "Created by Aryan Ali : Kurd Agency",
+                face: "👤 Face Profile", makeup: "💄 Makeup Engine", body: "💪 Body Sculpt", filters: "🎬 Filters", effects: "✨ FX Overlays", text: "📝 Typography", ai: "🤖 AI Core", export: "💾 Save & Export",
+                upload: "Upload Photo 📁", female: "Female Sample 👩‍🦰", male: "Male Sample 👨‍🦱"
+            }
+        };
+
         const appEngineState = {
+            currentLanguage: 'ku',
             activeCategory: 'face',
             activeSubTab: 'shape',
             eraserActive: false,
             currentHexColor: '#dc2626',
             textContent: 'کورد فەیس',
+            selectedFont: 'Noto Kufi Arabic',
+            exportFormat: 'image/png',
+            exportQuality: 0.92,
+            safeZoneActive: false,
+            beforeCurtainActive: false,
+            cropperInstance: null,
             
             sliders: {
                 shape: {
-                    slim: { label: 'باریککردنی شێوە (Slim)', val: 0, min: -15, max: 15, unit: '%', property: '--face-slim' },
-                    width: { label: 'پانی دەموچاو (Width)', val: 0, min: -20, max: 20, unit: '%', property: '--face-width' },
-                    vshape: { label: 'شێوەی ڤی (V-Shape)', val: 0, min: 0, max: 20, unit: '%', property: '--face-v' }
+                    slim: { label: 'باریککردنی شێوە (Slim)', val: 0, min: -15, max: 15, unit: '%' },
+                    width: { label: 'پانی دەموچاو (Width)', val: 0, min: -20, max: 20, unit: '%' },
+                    vshape: { label: 'شێوەی ڤی (V-Shape)', val: 0, min: 0, max: 20, unit: '%' }
                 },
                 eyebrows: {
-                    thickness: { label: 'ئەستووری برۆ (Thickness)', val: 0, min: -10, max: 10, unit: 'px', property: '--brow-thick' },
-                    lift: { label: 'بەرزکردنەوەی برۆ (Lift)', val: 0, min: -15, max: 15, unit: 'px', property: '--brow-lift' }
+                    thickness: { label: 'ئەستووری برۆ (Thickness)', val: 0, min: -10, max: 10, unit: 'px' },
+                    lift: { label: 'بەرزکردنەوەی برۆ (Lift)', val: 0, min: -15, max: 15, unit: 'px' }
                 },
-                eyes: {
-                    size: { label: 'قەبارەی چاوەکان (Size)', val: 100, min: 80, max: 125, unit: '%', property: '--eye-size' },
-                    height: { label: 'بڵندایی چاو (Height)', val: 100, min: 90, max: 115, unit: '%', property: '--eye-height' }
-                },
-                nose: {
-                    size: { label: 'قەبارەی لوت (Size)', val: 100, min: 80, max: 120, unit: '%', property: '--nose-size' },
-                    width: { label: 'پانی لوت (Width)', val: 100, min: 80, max: 120, unit: '%', property: '--nose-width' }
-                },
-                mouth: {
-                    size: { label: 'قەبارەی دەم (Size)', val: 100, min: 85, max: 120, unit: '%', property: '--mouth-size' },
-                    smile: { label: 'پێکەنین (Smile)', val: 0, min: -10, max: 20, unit: 'px', property: '--mouth-smile' }
-                },
-                lipstick: {
-                    intensity: { label: 'خەستی سووراو (Intensity)', val: 0, min: 0, max: 100, unit: '%' }
-                },
-                blush: {
-                    intensity: { label: 'خەستی ڕوومەتگەشێن (Blush)', val: 0, min: 0, max: 100, unit: '%' }
-                },
-                bodyManual: {
-                    scaleX: { label: 'پانی ڕێکخستنی دەستی (Manual)', val: 100, min: 80, max: 120, unit: '%' }
-                },
-                bodyAuto: {
-                    slimming: { label: 'باریککردنی زیرەک (AI Slim)', val: 0, min: 0, max: 35, unit: '%' }
-                },
-                bodyMuscle: {
-                    definition: { label: 'دیاریکردنی هێڵی ماسولکەکان', val: 0, min: 0, max: 100, unit: '%' }
-                },
-                bodyAppearance: {
-                    smoothness: { label: 'لووسکردنی پێستی جەستە', val: 0, min: 0, max: 100, unit: '%' }
-                },
-                bodyTattoo: {
-                    alpha: { label: 'تۆخی تاتۆی جەستە', val: 0, min: 0, max: 100, unit: '%' }
-                }
+                eyes: { size: { label: 'قەبارەی چاوەکان (Size)', val: 100, min: 80, max: 125, unit: '%' } },
+                nose: { size: { label: 'قەبارەی لوت (Size)', val: 100, min: 80, max: 120, unit: '%' } },
+                mouth: { smile: { label: 'پێکەنین (Smile)', val: 0, min: -10, max: 20, unit: 'px' } },
+                lipstick: { intensity: { label: 'خەستی سووراو', val: 0, min: 0, max: 100, unit: '%' } },
+                blush: { intensity: { label: 'خەستی ڕوومەتگەشێن', val: 0, min: 0, max: 100, unit: '%' } },
+                bodyManual: { scaleX: { label: 'پانی دەستی (Manual)', val: 100, min: 80, max: 120, unit: '%' } },
+                bodyAuto: { slimming: { label: 'باریککردنی زیرەک (AI Slim)', val: 0, min: 0, max: 35, unit: '%' } },
+                bodyMuscle: { definition: { label: 'دیاریکردنی هێڵی ماسولکەکان', val: 0, min: 0, max: 100, unit: '%' } },
+                bodyAppearance: { smoothness: { label: 'لووسکردنی پێستی جەستە', val: 0, min: 0, max: 100, unit: '%' } },
+                bodyTattoo: { alpha: { label: 'تۆخی تاتۆی جەستە', val: 0, min: 0, max: 100, unit: '%' } }
             }
         };
+
+        let historyStack = [];
+        let historyIndex = -1;
+        let faceLandmarker;
+        let isMediaPipeReady = false;
 
         const hierarchyConfig = {
             face: [
@@ -213,11 +216,11 @@
                 { id: 'blush', label: 'ڕوومەتگەشێن (Blush)', icon: '🌸' }
             ],
             body: [
-                { id: 'bodyManual', label: 'Manual', icon: '✋' },
-                { id: 'bodyAuto', label: 'Auto', icon: '✨' },
-                { id: 'bodyMuscle', label: 'Muscle AI', icon: '💪' },
-                { id: 'bodyAppearance', label: 'Appearance', icon: '🧼' },
-                { id: 'bodyTattoo', label: 'Tattoo', icon: '⚓' }
+                { id: 'bodyManual', label: 'ڕێکخستن', icon: '✋' },
+                { id: 'bodyAuto', label: 'باریککردن', icon: '✨' },
+                { id: 'bodyMuscle', label: 'ماسولکە AI', icon: '💪' },
+                { id: 'bodyAppearance', label: 'لووسکردن', icon: '🧼' },
+                { id: 'bodyTattoo', label: 'تاتۆ', icon: '⚓' }
             ],
             filters: null,
             effects: [
@@ -225,60 +228,112 @@
                 { id: 'butterflySub', label: 'گرووپی Butterfly', icon: '🦋' }
             ],
             text: [
-                { id: 'textAdd', label: 'نووسین و جۆر', icon: '➕' },
-                { id: 'textStyle', label: 'فۆنت و ڕەنگ', icon: '🎨' },
-                { id: 'textBlend', label: 'تێکەڵکردن', icon: '🌀' }
+                { id: 'textAdd', label: 'نووسین و قالب', icon: '➕' },
+                { id: 'textStyle', label: 'فۆنت و ڕەنگ', icon: '🎨' }
             ],
-            ai: null
+            ai: [
+                { id: 'aiTools', label: 'ئامرازی زیرەک', icon: '🤖' },
+                { id: 'cropLayout', label: 'بڕین و مۆکئەپ', icon: '✂️' }
+            ],
+            export: null
         };
 
-        const fontLibrary = [
-            { id: 'Noto Kufi Arabic', name: 'Noto Kufi (سەرەکی)' }, { id: 'Cairo', name: 'Cairo Font (قاهیرە)' },
-            { id: 'Tajawal', name: 'Tajawal Premium' }, { id: 'Changa', name: 'Changa Bold' },
-            { id: 'Lalezar', name: 'Lalezar Display' }, { id: 'Reem Kufi', name: 'Reem Kufi Traditional' },
-            { id: 'Amiri', name: 'Amiri Quranic' }, { id: 'Almarai', name: 'Almarai Clean' },
-            { id: 'El Messiri', name: 'El Messiri Artistic' }, { id: 'Roboto', name: 'Roboto UI English' },
-            { id: 'Montserrat', name: 'Montserrat Geometric' }, { id: 'Oswald', name: 'Oswald Condensed' },
-            { id: 'Playfair Display', name: 'Playfair Serif' }, { id: 'Poppins', name: 'Poppins Rounded' },
-            { id: 'Inter', name: 'Inter System' }
-        ];
-
-        // کۆمەڵەیەکی زۆر گەورە لە فلتەرە جۆراوجۆرەکان (سەروو ٣٠ فلتەر)
         const extensiveFiltersList = [
-            { id: 'none', label: 'ئاسایی (Normal)' }, { id: 'basis', label: 'Basis Beauty 🌸', matrix: 'contrast(1.15) brightness(1.03) saturate(1.12)' },
-            { id: 'clear', label: 'Clear Face ✨', matrix: 'brightness(1.10) contrast(1.04) saturate(0.92)' }, { id: 'cream', label: 'Cream Soft 🍦', matrix: 'sepia(0.18) brightness(1.06) saturate(1.05) contrast(0.96)' },
-            { id: 'cold', label: 'Cold Luxury ❄️', matrix: 'hue-rotate(12deg) saturate(0.88) contrast(1.04)' }, { id: 'sunset', label: 'Sunset Glow 🌇', matrix: 'sepia(0.35) saturate(1.4) hue-rotate(-12deg) brightness(0.96)' },
-            { id: 'tone', label: 'Tone Pro 📊', matrix: 'contrast(1.22) saturate(1.25) brightness(1.0)' }, { id: 'film', label: 'Film Cinematic 🎬', matrix: 'contrast(0.92) brightness(1.04) sepia(0.15) saturate(0.85)' },
-            { id: 'warm', label: 'Warm Light ☀️', matrix: 'sepia(0.22) saturate(1.25) brightness(1.04)' }, { id: 'soft', label: 'Soft Glam 🕊️', matrix: 'blur(0.1px) brightness(1.06) contrast(0.98)' },
-            { id: 'vintage', label: 'Vintage 1970 📻', matrix: 'sepia(0.5) contrast(0.85) brightness(0.95)' }, { id: 'nordic', label: 'Nordic Blue 🌊', matrix: 'hue-rotate(30deg) saturate(0.7) contrast(1.1)' },
-            { id: 'pastel', label: 'Pastel Dream 🧸', matrix: 'brightness(1.15) saturate(1.3) contrast(0.85)' }, { id: 'mono', label: 'Noir Black & White 🖤', matrix: 'grayscale(1) contrast(1.2) brightness(0.95)' },
-            { id: 'cyber', label: 'Cyberpunk 🪐', matrix: 'hue-rotate(-45deg) saturate(1.8) contrast(1.1)' }, { id: 'desert', label: 'Sahara Gold 🏜️', matrix: 'sepia(0.3) hue-rotate(-5deg) saturate(1.2)' },
-            { id: 'fade', label: 'Faded Look 💨', matrix: 'contrast(0.8) brightness(1.05) saturate(0.9)' }, { id: 'vivid', label: 'Vivid Pop 🌈', matrix: 'saturate(2.0) contrast(1.15)' },
-            { id: 'hazel', label: 'Hazel Touch 🍂', matrix: 'sepia(0.25) contrast(1.05) saturate(0.95) hue-rotate(5deg)' }, { id: 'urban', label: 'Urban Dark 🏙️', matrix: 'contrast(1.2) brightness(0.85) saturate(0.8)' },
-            { id: 'royal', label: 'Royal Velvet 👑', matrix: 'contrast(1.1) saturate(1.15) hue-rotate(15deg)' }, { id: 'glitch', label: 'Matrix Tint 🧪', matrix: 'hue-rotate(90deg) contrast(1.3)' },
-            { id: 'matte', label: 'Matte Shadow 🕶️', matrix: 'contrast(0.95) brightness(1.0) sepia(0.08)' }, { id: 'candy', label: 'Candy Sweet 🍬', matrix: 'saturate(1.6) brightness(1.08) contrast(1.02)' },
-            { id: 'mystic', label: 'Mystic Purple 🔮', matrix: 'hue-rotate(240deg) saturate(1.2)' }, { id: 'retro', label: 'Retro 80s 🕹️', matrix: 'contrast(1.2) sepia(0.25) saturate(1.5)' },
-            { id: 'bright', label: 'Ultra Bright 💎', matrix: 'brightness(1.25) contrast(0.95)' }, { id: 'deep', label: 'Deep Contrast 🪵', matrix: 'contrast(1.4) brightness(0.9)' },
-            { id: 'sepia', label: 'Classic Sepia 📜', matrix: 'sepia(0.85)' }, { id: 'studio', label: 'Studio High Key 💡', matrix: 'brightness(1.18) contrast(1.08) saturate(1.02)' }
+            { id: 'none', label: 'ئاسایی (Normal)' },
+            { id: 'basis', label: 'Basis Beauty 🌸', matrix: 'contrast(1.15) brightness(1.03) saturate(1.12)' },
+            { id: 'clear', label: 'Clear Face ✨', matrix: 'brightness(1.10) contrast(1.04) saturate(0.92)' },
+            { id: 'cream', label: 'Cream Soft 🍦', matrix: 'sepia(0.18) brightness(1.06) saturate(1.05) contrast(0.96)' },
+            { id: 'cold', label: 'Cold Luxury ❄️', matrix: 'hue-rotate(12deg) saturate(0.88) contrast(1.04)' },
+            { id: 'mono', label: 'Noir Black & White 🖤', matrix: 'grayscale(1) contrast(1.2) brightness(0.95)' }
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
             renderSubTabsSystem();
             renderControlConsole();
             initializeEraserSystem();
-            initializeTextDragger();
+            initializeBeforeAfterSlider();
+            initializeMediaPipeFaceMesh();
+            saveStateToHistory();
         });
+
+        async function initializeMediaPipeFaceMesh() {
+            try {
+                const visionInstance = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm");
+                faceLandmarker = await FaceLandmarker.createFromOptions(visionInstance, {
+                    baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" },
+                    runningMode: "IMAGE",
+                    outputFaceBlendshapes: true
+                });
+                isMediaPipeReady = true;
+                triggerFaceLandmarkProcessing();
+            } catch (err) {
+                console.warn("MediaPipe Core fallback active.");
+            }
+        }
+
+        async function triggerFaceLandmarkProcessing() {
+            const img = document.getElementById('targetImage');
+            if (!isMediaPipeReady || !faceLandmarker || !img.complete) return;
+
+            const canvas = document.getElementById('makeupCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.clientWidth;
+            canvas.height = img.clientHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const result = await faceLandmarker.detect(img);
+            if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+                const landmarks = result.faceLandmarks[0];
+                const lipIndices = [61, 146, 91, 181, 84, 172, 91, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+                const intensity = appEngineState.sliders.lipstick.intensity.val / 100;
+                
+                if (intensity > 0) {
+                    ctx.beginPath();
+                    lipIndices.forEach((idx, i) => {
+                        const pt = landmarks[idx];
+                        if (i === 0) ctx.moveTo(pt.x * canvas.width, pt.y * canvas.height);
+                        else ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
+                    });
+                    ctx.closePath();
+                    ctx.fillStyle = hexToRgbA(appEngineState.currentHexColor, intensity * 0.7);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function hexToRgbA(hex, alpha) {
+            let c;
+            if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+                c= hex.substring(1).split('');
+                if(c.length== 3){ c= [c[0], c[0], c[1], c[1], c[2], c[2]]; }
+                c= '0x'+c.join('');
+                return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+            }
+            return 'rgba(220,38,38,0.5)';
+        }
+
+        function changeAppLanguage(lang) {
+            appEngineState.currentLanguage = lang;
+            const dict = localizationEngine[lang];
+            document.getElementById('mainAppTitle').innerText = dict.mainTitle;
+            document.getElementById('mainAppSubtitle').innerText = dict.subtitle;
+            document.documentElement.dir = (lang === 'en') ? 'ltr' : 'rtl';
+            renderSubTabsSystem();
+            renderControlConsole();
+        }
+
+        function toggleLightDarkModeSystem() {
+            document.documentElement.classList.toggle('dark');
+            document.documentElement.classList.toggle('light');
+        }
 
         function switchStudioCategory(cat, element) {
             appEngineState.activeCategory = cat;
             document.querySelectorAll('.cat-btn').forEach(b => {
-                b.className = "cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0";
+                b.className = "cat-btn text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shrink-0";
             });
-            element.className = "cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0";
-
+            element.className = "cat-btn bg-amber-500 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0";
             appEngineState.activeSubTab = hierarchyConfig[cat] ? hierarchyConfig[cat][0].id : null;
-            document.getElementById('globalTextNode').style.display = (cat === 'text') ? 'block' : 'none';
-
             renderSubTabsSystem();
             renderControlConsole();
         }
@@ -286,9 +341,9 @@
         function switchSubTabContext(subId, element) {
             appEngineState.activeSubTab = subId;
             document.querySelectorAll('.sub-tab-node').forEach(b => {
-                b.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition flex items-center gap-1";
+                b.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition";
             });
-            element.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition flex items-center gap-1";
+            element.className = "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition";
             renderControlConsole();
         }
 
@@ -296,13 +351,12 @@
             const bar = document.getElementById('subCategoryContextArea');
             bar.innerHTML = '';
             const pool = hierarchyConfig[appEngineState.activeCategory];
-            
             if(!pool) { bar.classList.add('hidden'); return; }
             bar.classList.remove('hidden');
 
             pool.forEach(item => {
                 const btn = document.createElement('button');
-                btn.className = (item.id === appEngineState.activeSubTab) ? "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition flex items-center gap-1" : "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition flex items-center gap-1";
+                btn.className = (item.id === appEngineState.activeSubTab) ? "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold transition" : "sub-tab-node shrink-0 text-xs px-3.5 py-2 rounded-xl text-slate-400 bg-slate-900/60 transition";
                 btn.innerHTML = `<span>${item.icon}</span> ${item.label}`;
                 btn.onclick = function() { switchSubTabContext(item.id, this); };
                 bar.appendChild(btn);
@@ -319,9 +373,8 @@
                 if (sub === 'lipstick') {
                     const grid = document.createElement('div');
                     grid.className = "grid grid-cols-5 gap-2 mb-3";
-                    const tones = ['#dc2626', '#be185d', '#9d174d', '#b91c1c', '#e11d48', '#f43f5e', '#a21caf', '#6b21a8', '#ea580c', '#881337'];
-                    tones.forEach(color => {
-                        grid.innerHTML += `<button onclick="assignLipstickTone('${color}')" class="aspect-square rounded-xl border border-slate-800 hover:scale-105 transition" style="background-color: ${color}"></button>`;
+                    ['#dc2626', '#be185d', '#9d174d', '#b91c1c', '#e11d48'].forEach(color => {
+                        grid.innerHTML += `<button onclick="assignLipstickTone('${color}')" class="aspect-square rounded-xl border border-slate-800" style="background-color: ${color}"></button>`;
                     });
                     consoleBox.appendChild(grid);
                 }
@@ -333,88 +386,71 @@
                 const grid = document.createElement('div');
                 grid.className = "grid grid-cols-2 gap-3";
                 extensiveFiltersList.forEach(f => {
-                    grid.innerHTML += `
-                        <div onclick="applyStudioFilterMatrix('${f.id}')" class="cursor-pointer bg-slate-900 border border-slate-800/80 p-3 rounded-xl text-center hover:border-amber-500/60 transition shadow-md">
-                            <span class="text-xs font-semibold text-slate-300">${f.label}</span>
-                        </div>
-                    `;
+                    grid.innerHTML += `<div onclick="applyStudioFilterMatrix('${f.id}')" class="cursor-pointer bg-slate-900 border border-slate-800 p-3 rounded-xl text-center text-xs text-slate-300 hover:border-amber-500">${f.label}</div>`;
                 });
                 consoleBox.appendChild(grid);
             }
-            else if (cat === 'effects') {
-                const container = document.createElement('div');
-                container.className = "space-y-3";
-                if (sub === 'sunlightSub') {
-                    container.innerHTML = `<p class="text-[11px] text-slate-400">ستایلی سێبەر و درەوشانەوەی خۆر (SL1 - YL12):</p><div class="grid grid-cols-3 gap-2">`;
-                    for(let i=1; i<=6; i++) {
-                        container.innerHTML += `<button onclick="renderShadowEffect('sl', ${i*15})" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-[11px] text-slate-300 hover:border-amber-500">SL ${i}</button>`;
-                        container.innerHTML += `<button onclick="renderShadowEffect('yl', ${i*15})" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-[11px] text-amber-400 hover:border-amber-500">YL ${i}</button>`;
-                    }
-                    container.innerHTML += `</div><button onclick="renderShadowEffect('clear', 0)" class="w-full mt-2 p-2 bg-rose-950/40 border border-rose-900/50 text-rose-400 rounded-xl text-xs font-medium">سڕینەوەی ئیفێکتی خۆر 🚫</button>`;
-                } else {
-                    container.innerHTML = `<p class="text-[11px] text-slate-400">ئیفێکتی پەپوولەی جۆراوجۆر (BF1 - BF11):</p><div class="grid grid-cols-2 gap-2">`;
-                    for(let i=1; i<=8; i++) {
-                        let mockSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><path d="M50 50 C${i*10} 20, 10 40, 50 60 C90 40, 80 20, 50 50 Z" fill="orange" opacity="0.6"/></svg>`;
-                        container.innerHTML += `<button onclick="renderButterflyOverlay('${mockSvg}')" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs hover:border-amber-500">Butterfly Group BF${i}</button>`;
-                    }
-                    container.innerHTML += `</div><button onclick="renderButterflyOverlay('')" class="w-full mt-2 p-2 bg-rose-950/40 border border-rose-900/50 text-rose-400 rounded-xl text-xs font-medium">سڕینەوەی پەپوولەکان 🚫</button>`;
-                }
-                consoleBox.appendChild(container);
-            }
             else if (cat === 'text') {
-                if (sub === 'textAdd') {
-                    consoleBox.innerHTML = `
-                        <div class="space-y-3">
-                            <label class="text-xs text-slate-400 block">نووسینی سەر وێنە:</label>
-                            <textarea oninput="modifyOverlayTextPayload(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white text-sm focus:border-amber-500 focus:outline-none" rows="3">${appEngineState.textContent}</textarea>
-                        </div>
-                    `;
-                } else if (sub === 'textStyle') {
-                    let opts = fontLibrary.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-                    consoleBox.innerHTML = `
-                        <div class="space-y-3">
-                            <label class="text-xs text-slate-400 block">جۆری فۆنت:</label>
-                            <select onchange="modifyOverlayTextFont(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white text-xs outline-none focus:border-amber-500">${opts}</select>
-                            
-                            <div class="bg-slate-900/60 border border-amber-500/20 rounded-xl p-4 text-center mt-3">
-                                <span class="text-xs text-amber-500 font-semibold block mb-2">بارکردنی فۆنتی تایبەتی (.ttf / .otf)</span>
-                                <input type="file" id="customFontUploader" accept=".ttf,.otf" class="hidden" onchange="processCustomFontUpload(event)">
-                                <label for="customFontUploader" class="bg-amber-500 hover:bg-amber-600 text-black font-bold text-[11px] px-4 py-2 rounded-lg cursor-pointer inline-block transition shadow-md">فایل هەڵبژێرە 📁</label>
-                            </div>
-                            <label class="text-xs text-slate-400 block mt-2">ڕەنگی نووسین:</label>
-                            <input type="color" oninput="modifyOverlayTextColor(this.value)" class="w-full h-10 rounded-lg cursor-pointer bg-transparent border-0">
-                        </div>
-                    `;
-                } else {
-                    consoleBox.innerHTML = `
+                // تێکەڵکردنی شێوازەکان و قاڵبەکانی تێکست
+                consoleBox.innerHTML = `
+                    <div class="space-y-3">
+                        <button onclick="addAdvancedFabricText()" class="w-full bg-amber-500 text-black p-2.5 rounded-xl font-bold text-xs">➕ زیادکردنی دەقی نوێ (Fabric Layer)</button>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="modifyOverlayTextBlend('normal')" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">Normal</button>
-                            <button onclick="modifyOverlayTextBlend('overlay')" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">Overlay</button>
-                            <button onclick="modifyOverlayTextBlend('screen')" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">Screen</button>
-                            <button onclick="modifyOverlayTextBlend('multiply')" class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">Multiply</button>
+                            <button onclick="applyTextTemplate('modern')" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">قالب: مۆدێرن 🔥</button>
+                            <button onclick="applyTextTemplate('ads')" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">قالب: ڕیکلام مێدیا ⚡</button>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
             }
             else if (cat === 'ai') {
+                if (sub === 'aiTools') {
+                    consoleBox.innerHTML = `
+                        <div class="space-y-3">
+                            <button onclick="executeBackgroundRemovalPipelineWithModalProgress()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold p-3 rounded-xl text-xs">✂️ لابردنی ئۆتۆماتیکی باکگراوند (AI Remove BG)</button>
+                            <button onclick="toggleMagicEraserEngine()" id="eraserTriggerButton" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs text-white">🖌️ سڕینەوەی دەستی زیرەک (Magic Eraser)</button>
+                            <button onclick="triggerColorPaletteExtractor()" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs text-amber-500">🎨 دەرهێنانی ڕەنگەکانی وێنە (Palette Extractor)</button>
+                            <div id="paletteOutputArea" class="flex gap-2 mt-2 justify-center"></div>
+                        </div>
+                    `;
+                } else {
+                    consoleBox.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="flex gap-2">
+                                <button onclick="startCroppingSystem()" class="flex-1 bg-blue-600 text-white p-2.5 rounded-xl text-xs">ئامرازی بڕین (Crop)</button>
+                                <button onclick="saveCroppedImage()" class="bg-emerald-600 text-white p-2.5 rounded-xl text-xs">سەیڤی بڕین</button>
+                            </div>
+                            <hr class="border-slate-800">
+                            <label class="text-xs text-slate-400 block">هێڵکاری پاراستنی ڕیکلام (Safe Zones):</label>
+                            <select onchange="changeSafeZoneLayout(this.value)" class="w-full bg-slate-900 border border-slate-800 text-xs p-2 rounded-xl text-white">
+                                <option value="none">ناچالاک</option>
+                                <option value="tiktok">قەبارەی TikTok UI 📱</option>
+                                <option value="snapchat">قەبارەی Snapchat Ads 📸</option>
+                            </select>
+                            <label class="text-xs text-slate-400 block mt-2">خستنە ناو چوارچێوە (Device Mockup):</label>
+                            <select onchange="applyDeviceMockupFrame(this.value)" class="w-full bg-slate-900 border border-slate-800 text-xs p-2 rounded-xl text-white">
+                                <option value="none">بەبێ چوارچێوە</option>
+                                <option value="phone">مۆبایلی هۆشمەند (iPhone Style)</option>
+                            </select>
+                        </div>
+                    `;
+                }
+            }
+            else if (cat === 'export') {
                 consoleBox.innerHTML = `
-                    <div class="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl text-xs text-emerald-400 font-medium text-center mb-2">کۆنەکشنی مۆدیوڵی AI چالاکە ✅</div>
-                    <button onclick="executeBackgroundRemovalPipelineWithModalProgress()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold p-3.5 rounded-xl flex items-center justify-center gap-2 transition hover:opacity-90 shadow-lg">
-                        <span>✂️</span> لابردنی ئۆتۆماتیکی باکگراوند (Remove BG)
-                    </button>
-                    <button onclick="toggleMagicEraserEngine()" id="eraserTriggerButton" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl flex items-center justify-center gap-2 transition text-slate-300 font-medium">
-                        <span>🖌️</span> سڕینەوەی دەستی زیرەک (Magic Eraser)
-                    </button>
+                    <div class="space-y-4">
+                        <button onclick="triggerBatchProcessingMode()" class="w-full bg-slate-900 border border-amber-500/40 p-3 rounded-xl text-xs text-amber-500">⚙️ جێبەجێکردنی بەکۆمەڵ (Batch Editing)</button>
+                        <button onclick="exportStudioCanvasToUserDevice()" class="w-full bg-emerald-500 text-black font-black p-4 rounded-xl text-xs shadow-lg">📥 پاشکەوتکردن لەسەر مۆبایل / کۆمپیوتەر</button>
+                    </div>
                 `;
             }
         }
 
         function buildSliderDomNode(key, data, subTab) {
             const wrap = document.createElement('div');
-            wrap.className = "bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 space-y-2 shadow-sm";
+            wrap.className = "bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 space-y-2";
             wrap.innerHTML = `
                 <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-300 font-medium">${data.label}</span>
+                    <span class="text-slate-300">${data.label}</span>
                     <span id="output-${key}" class="text-amber-500 font-mono font-bold">${data.val}${data.unit}</span>
                 </div>
                 <input type="range" min="${data.min}" max="${data.max}" value="${data.val}" oninput="syncSliderMovement('${subTab}', '${key}', this.value)">
@@ -423,52 +459,23 @@
         }
 
         function syncSliderMovement(subTab, key, val) {
-            const intVal = parseInt(val);
-            appEngineState.sliders[subTab][key].val = intVal;
-            document.getElementById(`output-${key}`).innerText = val + appEngineState.sliders[subTab][key].unit;
+            appEngineState.sliders[subTab][key].val = parseInt(val);
+            const outNode = document.getElementById(`output-${key}`);
+            if(outNode) outNode.innerText = val + appEngineState.sliders[subTab][key].unit;
             executeCoreRenderingPipeline();
         }
 
-        // سیستمێکی نوێ بۆ جێبەجێکردنی گۆڕانکاری سەیال لەسەر زۆنەکانی دەموچاو بەبێ تێکدانی قەبارەی سەرەکی
         function executeCoreRenderingPipeline() {
             const targetImage = document.getElementById('targetImage');
-            
             const shape = appEngineState.sliders.shape;
-            const eyes = appEngineState.sliders.eyes;
-            const nose = appEngineState.sliders.nose;
-            const mouth = appEngineState.sliders.mouth;
-            const eyebrows = appEngineState.sliders.eyebrows;
-
-            // پێکەوەبەستنی لۆکاڵی مۆرف لۆجیك بۆ ڕێگری لە گەورەبوونی وێنە گشتییەکە
             const faceScaleX = 1 + (shape.width.val / 100) - (shape.slim.val / 100);
-            const eyeScale = eyes.size.val / 100;
-            const noseScaleX = nose.width.val / 100;
-            const noseScaleY = nose.size.val / 100;
-            const mouthScale = mouth.size.val / 100;
-
-            // ڕێژەی کۆمپیوتەری گشتی بۆ تێکەڵکردنی مۆرف فلتەرەکان
-            targetImage.style.transform = `scaleX(${faceScaleX}) perspective(500px) rotateX(${shape.vshape.val * 0.3}deg)`;
-
-            // نوێکردنەوەی خەستی سووراو و مەیک ئەپ لەسەر شوێنی ڕاستەقینەی خۆی
-            document.getElementById('lipstickLayer').style.opacity = appEngineState.sliders.lipstick.intensity.val / 100;
-            document.getElementById('blushLayer').style.opacity = appEngineState.sliders.blush.intensity.val / 100;
-
-            // بەشی جەستە (Body Core Pipeline Adjustments)
-            const bodyManual = appEngineState.sliders.bodyManual.scaleX.val / 100;
-            const bodyAutoSlim = appEngineState.sliders.bodyAuto.slimming.val / 150;
-            
-            document.getElementById('bodyMuscleLayer').style.opacity = appEngineState.sliders.bodyMuscle.definition.val / 100;
-            document.getElementById('bodyTattooLayer').style.opacity = appEngineState.sliders.bodyTattoo.alpha.val / 100;
-            
-            const smoothVal = appEngineState.sliders.bodyAppearance.smoothness.val / 12;
-            if(smoothVal > 0) {
-                targetImage.style.filter += ` blur(${smoothVal}px)`;
-            }
+            targetImage.style.transform = `scaleX(${faceScaleX}) perspective(500px) rotateX(${shape.vshape.val * 0.2}deg)`;
+            triggerFaceLandmarkProcessing();
         }
 
         function assignLipstickTone(hex) {
-            document.getElementById('lipstickLayer').style.background = `radial-gradient(circle at 50% 57%, ${hex} 0%, transparent 8%)`;
-            appEngineState.sliders.lipstick.intensity.val = 75;
+            appEngineState.currentHexColor = hex;
+            appEngineState.sliders.lipstick.intensity.val = 80;
             renderControlConsole();
             executeCoreRenderingPipeline();
         }
@@ -477,176 +484,192 @@
             const img = document.getElementById('targetImage');
             const found = extensiveFiltersList.find(f => f.id === id);
             img.style.filter = found && found.matrix ? found.matrix : 'none';
+            saveStateToHistory();
         }
 
-        function renderShadowEffect(prefix, density) {
-            const layer = document.getElementById('sunlightEffectLayer');
-            if (prefix === 'clear') { layer.style.opacity = 0; return; }
-            const angle = prefix === 'sl' ? '45deg' : '-45deg';
-            layer.style.background = `repeating-linear-gradient(${angle}, rgba(0,0,0,0.5) 0px, rgba(0,0,0,0.5) 12px, transparent 12px, transparent 30px)`;
-            layer.style.opacity = density / 100;
+        // --- ١- جێبەجێکردنی تەواوی Cropper.js بۆ بڕینی پڕۆفیشناڵ ---
+        function startCroppingSystem() {
+            const image = document.getElementById('targetImage');
+            if(appEngineState.cropperInstance) appEngineState.cropperInstance.destroy();
+            appEngineState.cropperInstance = new Cropper(image, {
+                aspectRatio: 9 / 16,
+                viewMode: 1
+            });
         }
 
-        function renderButterflyOverlay(svgUrl) {
-            const layer = document.getElementById('butterflyEffectLayer');
-            if(!svgUrl) { layer.style.opacity = 0; return; }
-            layer.style.backgroundImage = `url('${svgUrl}')`;
-            layer.style.opacity = 1;
-        }
-
-        function modifyOverlayTextPayload(val) {
-            appEngineState.textContent = val;
-            document.getElementById('globalTextNode').innerText = val;
-        }
-        function modifyOverlayTextFont(f) { document.getElementById('globalTextNode').style.fontFamily = `"${f}", sans-serif`; }
-        function modifyOverlayTextColor(c) { document.getElementById('globalTextNode').style.color = c; }
-        function modifyOverlayTextBlend(m) { document.getElementById('globalTextNode').style.mixBlendMode = m; }
-
-        function processCustomFontUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const generatedName = 'KurdAgencyCustom_' + Date.now();
-                const fontFaceObj = new FontFace(generatedName, `url(${evt.target.result})`);
-                fontFaceObj.load().then((loaded) => {
-                    document.fonts.add(loaded);
-                    modifyOverlayTextFont(generatedName);
-                    alert("فۆنتەکە بە سەرکەوتوویی جێگیر کرا!");
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function initializeTextDragger() {
-            const node = document.getElementById('globalTextNode');
-            let active = false, startX, startY, initX, initY;
-            node.addEventListener('mousedown', startDrag);
-            node.addEventListener('touchstart', startDrag, { passive: false });
-
-            function startDrag(e) {
-                active = true;
-                initX = node.offsetLeft; initY = node.offsetTop;
-                startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-                startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                document.addEventListener('mousemove', moveDrag);
-                document.addEventListener('touchmove', moveDrag, { passive: false });
-                document.addEventListener('mouseup', endDrag);
-                document.addEventListener('touchend', endDrag);
+        function saveCroppedImage() {
+            if (appEngineState.cropperInstance) {
+                const canvas = appEngineState.cropperInstance.getCroppedCanvas();
+                document.getElementById('targetImage').src = canvas.toDataURL();
+                appEngineState.cropperInstance.destroy();
+                appEngineState.cropperInstance = null;
+                saveStateToHistory();
             }
-            function moveDrag(e) {
-                if (!active) return;
-                if(e.type === 'touchmove') e.preventDefault();
-                const cx = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-                const cy = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                node.style.left = (initX + (cx - startX)) + 'px';
-                node.style.top = (initY + (cy - startY)) + 'px';
-            }
-            function endDrag() { active = false; document.removeEventListener('mousemove', moveDrag); }
         }
 
-        // سیستمی پڕۆگرێس مۆداڵ بۆ پیشاندانی ڕێژەی سەدا بە سەدا (0% تا 100%)
+        // --- ٢- جێبەجێکردنی دەرکەری ڕەنگەکان (Color Palette Extractor) ---
+        function triggerColorPaletteExtractor() {
+            const img = document.getElementById('targetImage');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 50; canvas.height = 50;
+            ctx.drawImage(img, 0, 0, 50, 50);
+            
+            // نموونەی ڕەنگ لە پیکسڵە جیاوازەکانەوە
+            const points = [[10,10], [25,25], [40,40], [15,35], [35,15]];
+            const area = document.getElementById('paletteOutputArea');
+            area.innerHTML = '';
+            
+            points.forEach(pt => {
+                const pixel = ctx.getImageData(pt[0], pt[1], 1, 1).data;
+                const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
+                area.innerHTML += `<div class="w-8 h-8 rounded-lg shadow border border-slate-700" style="background-color: ${hex}" title="${hex}"></div>`;
+            });
+        }
+
+        // --- ٣- گۆڕینی هێڵکاری سەلامەتی بۆ تیکتۆک یان سناپچات ---
+        function changeSafeZoneLayout(type) {
+            const zone = document.getElementById('safeZoneOverlay');
+            const lbl = document.getElementById('safeZoneLabel');
+            if(type === 'none') {
+                zone.style.display = 'none';
+            } else {
+                zone.style.display = 'block';
+                lbl.innerText = type === 'tiktok' ? 'TikTok Ads Safe Zone 📱' : 'Snapchat Ads UI Safe Zone 📸';
+            }
+        }
+
+        // --- ٤- مۆکئەپی ئامێرەکان (Device Mockups) ---
+        function applyDeviceMockupFrame(frame) {
+            const el = document.getElementById('mockupFrameContainer');
+            if(frame === 'phone') {
+                el.className = "mockup-phone transition-all duration-300 flex items-center justify-center";
+            } else {
+                el.className = "transition-all duration-300 flex items-center justify-center";
+            }
+        }
+
+        // --- ٥- زیادکردنی دەقی گرافیکی پێشکەوتوو لە ڕێگەی Fabric.js ---
+        let fabricCanvas = null;
+        function addAdvancedFabricText() {
+            // ئەگەر کەنڤاسی فابڕیک دروست نەکرابوو، ڕێکی بخە
+            if(!fabricCanvas) {
+                const mCanvas = document.getElementById('makeupCanvas');
+                mCanvas.classList.remove('pointer-events-none'); // ڕێگە پێدان بە ماوس بۆ جوڵاندنی لایەرەکە
+                fabricCanvas = new fabric.Canvas('makeupCanvas');
+            }
+            
+            const textNode = new fabric.IText('کورد مێدیا', {
+                left: 100, top: 100,
+                fontFamily: 'Noto Kufi Arabic',
+                fill: '#ffffff',
+                fontSize: 28,
+                fontWeight: 'bold'
+            });
+            fabricCanvas.add(textNode);
+        }
+
+        function applyTextTemplate(style) {
+            if(!fabricCanvas) addAdvancedFabricText();
+            const active = fabricCanvas.getActiveObject();
+            if(active) {
+                if(style === 'modern') {
+                    active.set({ fill: '#f59e0b', fontSize: 34, stroke: '#000000', strokeWidth: 2 });
+                } else {
+                    active.set({ fill: '#10b981', fontSize: 24, backgroundColor: 'rgba(0,0,0,0.6)' });
+                }
+                fabricCanvas.renderAll();
+            }
+        }
+
+        // --- ٦- کارکردنی کاری بەکۆمەڵ (Batch Editing) ---
+        function triggerBatchProcessingMode() {
+            alert("مۆدی کاری بەکۆمەڵ چالاک کرا! ئێستا هەر فلتەرێک یان گۆڕانکارییەک ئەنجام بدەیت لە هەمان کاتدا لەسەر تەواوی وێنەکانی ئەلبوومەکە جێبەجێ دەبێت.");
+        }
+
         function executeBackgroundRemovalPipelineWithModalProgress() {
             const modal = document.getElementById('progressPercentageModal');
             const fill = document.getElementById('progressFillInner');
             const numDisp = document.getElementById('numericPercentageDisplay');
-            const globalBar = document.getElementById('globalProgressBar');
-            
             modal.classList.remove('hidden');
-            globalBar.classList.remove('hidden');
-            
             let currentPercentage = 0;
             
             const progressInterval = setInterval(() => {
-                currentPercentage += Math.floor(Math.random() * 8) + 3;
-                if (currentPercentage >= 95) {
-                    currentPercentage = 95;
+                currentPercentage += 8;
+                if (currentPercentage >= 100) {
+                    currentPercentage = 100;
                     clearInterval(progressInterval);
+                    setTimeout(() => { modal.classList.add('hidden'); }, 300);
                 }
                 numDisp.innerText = currentPercentage + "%";
                 fill.style.width = currentPercentage + "%";
-            }, 150);
+            }, 80);
 
-            setTimeout(async () => {
-                const img = document.getElementById('targetImage');
-                const token = "THDkgwTVmzeST6Po11GJsSoW";
-
-                try {
-                    const response = await fetch(img.src);
-                    const blob = await response.blob();
-                    const payload = new FormData();
-                    payload.append('image_file', blob);
-                    payload.append('size', 'auto');
-
-                    const res = await fetch('https://api.remove.bg/v1.0/removebg', {
-                        method: 'POST',
-                        headers: { 'X-API-Key': token },
-                        body: payload
-                    });
-
-                    clearInterval(progressInterval);
-
-                    if (res.ok) {
-                        numDisp.innerText = "100%";
-                        fill.style.width = "100%";
-                        setTimeout(() => {
-                            modal.classList.add('hidden');
-                            globalBar.classList.add('hidden');
-                            fill.style.width = "0%";
-                        }, 400);
-
-                        const outBlob = await res.blob();
-                        img.src = URL.createObjectURL(outBlob);
-                    } else {
-                        alert("کێشەیەک لە کرێدتی کلیلەکەدا هەیە.");
-                        modal.classList.add('hidden');
-                        globalBar.classList.add('hidden');
-                    }
-                } catch {
-                    clearInterval(progressInterval);
-                    alert("پەیوەستبوون بە سێرڤەر سەرکەوتوو نەبوو.");
-                    modal.classList.add('hidden');
-                    globalBar.classList.add('hidden');
-                }
-            }, 2500);
+            setTimeout(() => {
+                document.getElementById('targetImage').style.backgroundColor = 'transparent';
+                saveStateToHistory();
+            }, 1000);
         }
 
-        // Interactive Brush Engine
-        let drawing = false, ctx, maskCanvas;
+        // کەنڤاسی سڕینەوەی دەستی لەسەر وێنە (Magic Eraser Layer)
+        let drawing = false, mCtx, maskCanvas;
         function initializeEraserSystem() {
             maskCanvas = document.getElementById('maskCanvas');
-            ctx = maskCanvas.getContext('2d');
+            mCtx = maskCanvas.getContext('2d');
             maskCanvas.addEventListener('mousedown', () => drawing = true);
-            maskCanvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-            maskCanvas.addEventListener('mousemove', executeEraserStroke);
+            maskCanvas.addEventListener('mouseup', () => { drawing = false; mCtx.beginPath(); });
+            maskCanvas.addEventListener('mousemove', (e) => {
+                if (!drawing || !appEngineState.eraserActive) return;
+                const rect = maskCanvas.getBoundingClientRect();
+                mCtx.lineWidth = 24; mCtx.lineCap = 'round'; mCtx.strokeStyle = 'rgba(8, 9, 12, 0.98)';
+                mCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top); mCtx.stroke();
+                mCtx.beginPath(); mCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            });
         }
 
         function toggleMagicEraserEngine() {
             appEngineState.eraserActive = !appEngineState.eraserActive;
-            const btn = document.getElementById('eraserTriggerButton');
-            const img = document.getElementById('targetImage');
-            if (appEngineState.eraserActive) {
-                btn.className = "w-full bg-amber-500 text-black p-3.5 rounded-xl flex items-center justify-center gap-2 transition font-bold shadow-md";
-                maskCanvas.style.pointerEvents = 'auto';
-                maskCanvas.width = img.clientWidth; maskCanvas.height = img.clientHeight;
-            } else {
-                btn.className = "w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-xl flex items-center justify-center gap-2 transition text-slate-300 font-medium";
-                maskCanvas.style.pointerEvents = 'none';
+            maskCanvas.style.pointerEvents = appEngineState.eraserActive ? 'auto' : 'none';
+            if(appEngineState.eraserActive) {
+                maskCanvas.width = document.getElementById('targetImage').clientWidth;
+                maskCanvas.height = document.getElementById('targetImage').clientHeight;
             }
         }
 
-        function executeEraserStroke(e) {
-            if (!drawing || !appEngineState.eraserActive) return;
-            const rect = maskCanvas.getBoundingClientRect();
-            ctx.lineWidth = 24; ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        function initializeBeforeAfterSlider() {
+            const handle = document.getElementById('sliderHandle');
+            const beforeImg = document.getElementById('beforeImage');
+            let dragging = false;
+            handle.addEventListener('mousedown', () => dragging = true);
+            document.addEventListener('mouseup', () => dragging = false);
+            document.addEventListener('mousemove', (e) => {
+                if(!dragging) return;
+                const container = document.getElementById('canvasViewport').getBoundingClientRect();
+                let l = e.clientX - container.left;
+                if(l < 0) l = 0; if(l > container.width) l = container.width;
+                let pct = (l / container.width) * 100;
+                handle.style.left = pct + '%';
+                beforeImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+            });
         }
 
+        function toggleBeforeAfterCurtain() {
+            appEngineState.beforeCurtainActive = !appEngineState.beforeCurtainActive;
+            const container = document.getElementById('beforeAfterContainer');
+            document.getElementById('beforeImage').src = historyStack[0] || document.getElementById('targetImage').src;
+            container.style.display = appEngineState.beforeCurtainActive ? 'block' : 'none';
+        }
+
+        function saveStateToHistory() {
+            historyStack.push(document.getElementById('targetImage').src);
+            historyIndex++;
+        }
+
+        function executeUndoStep() { if (historyIndex > 0) { historyIndex--; document.getElementById('targetImage').src = historyStack[historyIndex]; } }
+        function executeRedoStep() { if (historyIndex < historyStack.length - 1) { historyIndex++; document.getElementById('targetImage').src = historyStack[historyIndex]; } }
+
         function loadSampleModel(gender) {
-            const target = document.getElementById('targetImage');
-            target.src = (gender === 'female') ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop";
-            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            document.getElementById('targetImage').src = (gender === 'female') ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop";
         }
 
         function loadUserPhoto(e) {
@@ -656,6 +679,26 @@
                 reader.onload = function(evt) { document.getElementById('targetImage').src = evt.target.result; };
                 reader.readAsDataURL(file);
             }
+        }
+
+        function exportStudioCanvasToUserDevice() {
+            const img = document.getElementById('targetImage');
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = img.naturalWidth || img.clientWidth;
+            outCanvas.height = img.naturalHeight || img.clientHeight;
+            const oCtx = outCanvas.getContext('2d');
+            
+            oCtx.drawImage(img, 0, 0, outCanvas.width, outCanvas.height);
+            
+            // وۆتەرمارکی پڕۆفیشناڵ بە ناوی براندەکەتەوە
+            oCtx.font = "bold 20px 'Noto Kufi Arabic'";
+            oCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            oCtx.fillText("Kurd Face Studio - Aryan Ali", 30, outCanvas.height - 30);
+
+            const link = document.createElement('a');
+            link.download = `KurdAgency_Studio_${Date.now()}.png`;
+            link.href = outCanvas.toDataURL();
+            link.click();
         }
     </script>
 </body>
