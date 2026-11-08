@@ -1,531 +1,1505 @@
 <!DOCTYPE html>
-<html lang="ku" dir="rtl" class="dark">
+<html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kurd Face Studio - Powered by Kurd Agency</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;600;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Changa:wght@400;600;700&family=Lalezar&family=Reem+Kufi:wght@500;700&family=Almarai:wght@400;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cssgram/0.1.10/cssgram.min.css">
-    
-    <style>
-        body { font-family: 'Noto Kufi Arabic', sans-serif; transition: background-color 0.3s, color 0.3s; user-select: none; overflow: hidden; height: 100vh; }
-        .dark body { background-color: #08090c; color: #f3f4f6; }
-        .light body { background-color: #f8fafc; color: #0f172a; }
-        
-        .workspace-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
-        .light .workspace-grid { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); }
-
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #f59e0b; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.8); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1e293b; border-radius: 2px; }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        #faceMeshWrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .effect-overlay-layer { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 25; transition: all 0.3s ease; }
-        
-        .mockup-phone { border: 12px solid #1e293b; border-radius: 36px; padding: 4px; background: #000; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-
-        #beforeAfterContainer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 45; }
-        #beforeImage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; clip-path: inset(0 50% 0 0); filter: brightness(0.8); }
-        #sliderHandle { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #f59e0b; cursor: ew-resize; z-index: 2; pointer-events: auto; transform: translateX(-50%); box-shadow: 0 0 10px #000; }
-
-        .safe-zone { position: absolute; inset: 0; border: 3px dashed #ef4444; pointer-events: none; display: none; z-index: 48; opacity: 0.8; }
-        
-        /* Magic Eraser Canvas */
-        #eraserCanvas { position: absolute; top:0; left:0; pointer-events:none; z-index: 50; }
-        
-        /* Cropper Container */
-        #cropModal { display: none; position: fixed; inset:0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
-        #cropImageHolder { max-width: 80%; max-height: 70vh; }
-    </style>
-</head>
-<body class="flex flex-col">
-
-    <div id="progressPercentageModal" class="fixed inset-0 bg-black/80 z-[90] hidden flex flex-col items-center justify-center">
-        <div class="bg-[#11131e] border border-slate-800 p-8 rounded-2xl text-center max-w-xs w-full shadow-2xl">
-            <div class="w-16 h-16 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin mx-auto mb-4"></div>
-            <h3 class="text-sm font-bold text-white mb-1">پڕۆسەی زیرەکی دەستکرد</h3>
-            <p id="progressStatusText" class="text-[11px] text-slate-400 mb-4">تکایە چاوەڕێبە...</p>
-        </div>
-    </div>
-
-    <div id="cropModal" class="flex-col">
-        <div class="w-full bg-slate-900 p-4 text-center text-white font-bold mb-4">بڕینی وێنە (Cropper)</div>
-        <div><img id="cropImageHolder" src=""></div>
-        <div class="mt-6 flex gap-4">
-            <button onclick="applyCrop()" class="bg-emerald-500 px-6 py-2 rounded-lg font-bold text-black">بڕین ✂️</button>
-            <button onclick="cancelCrop()" class="bg-red-500 px-6 py-2 rounded-lg font-bold text-white">پاشگەزبوونەوە ✖️</button>
-        </div>
-    </div>
-
-    <header class="bg-[#0f111a] border-b border-slate-800 px-6 py-4 flex justify-between items-center shrink-0 z-50 shadow-lg">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-black text-xl shadow-lg">KF</div>
-            <div>
-                <h1 class="text-md font-bold tracking-wide" id="mainAppTitle">Kurd Face Studio</h1>
-                <p class="text-[10px] text-amber-500 font-medium" id="mainAppSubtitle">دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی</p>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-3 flex-wrap">
-            <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-slate-900 border border-slate-800 text-xs px-2.5 py-1.5 rounded-lg text-white outline-none">
-                <option value="ku">کوردی</option>
-                <option value="ar">العربية</option>
-                <option value="en">English</option>
-            </select>
-            <button onclick="toggleLightDarkModeSystem()" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-amber-500">🌓</button>
-            <label class="bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer transition flex items-center gap-2 shadow-md">
-                <span id="lblUploadPhoto">بارکردنی وێنە 📁</span>
-                <input type="file" id="imageLoader" accept="image/*" class="hidden" onchange="loadUserPhoto(event)">
-            </label>
-        </div>
-    </header>
-
-    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div class="flex-1 workspace-grid flex flex-col items-center justify-center p-6 relative overflow-hidden h-full">
-            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none">
-                <div class="flex gap-2 pointer-events-auto">
-                    <button onclick="executeUndoStep()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white hover:border-amber-500 transition">↩️ گەڕانەوە</button>
-                    <button onclick="executeRedoStep()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white hover:border-amber-500 transition">↪️ پێشەوە</button>
-                </div>
-                <div class="flex gap-2 pointer-events-auto">
-                    <button onclick="toggleBeforeAfterCurtain()" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-amber-500 font-bold transition">↔️ پێش و پاش</button>
-                </div>
-            </div>
-
-            <div id="mockupFrameContainer" class="transition-all duration-300 flex items-center justify-center" style="width: 540px; height: 85%;">
-                <div id="canvasViewport" class="relative w-full h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center bg-[#090b11] border border-slate-800/50">
-                    <div id="faceMeshWrapper">
-                        <canvas id="baseImageCanvas" class="max-w-full max-h-full object-contain"></canvas>
-                        <img id="targetImage" style="display:none;" crossorigin="anonymous"> <canvas id="makeupCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-30" style="mix-blend-mode: multiply; opacity: 0.8;"></canvas>
-                        
-                        <div class="absolute inset-0 z-40 pointer-events-none" id="fabricWrapper">
-                            <canvas id="fabricCanvas"></canvas>
-                        </div>
-                        
-                        <canvas id="eraserCanvas" class="absolute inset-0 w-full h-full opacity-50 z-50"></canvas>
-
-                        <div id="beforeAfterContainer">
-                            <img id="beforeImage" src="" class="max-w-full max-h-full object-contain select-none">
-                            <div id="sliderHandle"></div>
-                        </div>
-
-                        <div id="safeZoneOverlay" class="safe-zone">
-                            <div id="safeZoneLabel" class="absolute bottom-20 left-4 right-16 text-[10px] bg-black/80 p-2 rounded text-left font-mono text-white">TikTok Verified Safe Zone</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="w-full lg:w-[460px] bg-[#0c0d14] border-t lg:border-t-0 lg:border-r border-slate-800 flex flex-col h-[55%] lg:h-full shrink-0 shadow-2xl z-50">
-            <div class="flex flex-wrap bg-[#0f111a] border-b border-slate-800 p-3 gap-2 shrink-0">
-                <button onclick="switchStudioCategory('face', this)" class="cat-btn bg-amber-500 text-black px-3 py-2 rounded-xl text-xs font-bold transition">👤 دەموچاو</button>
-                <button onclick="switchStudioCategory('makeup', this)" class="cat-btn text-slate-400 hover:text-white px-3 py-2 rounded-xl text-xs font-semibold transition">💄 مەیک ئەپ</button>
-                <button onclick="switchStudioCategory('filters', this)" class="cat-btn text-slate-400 hover:text-white px-3 py-2 rounded-xl text-xs font-semibold transition">🎬 فلتەر</button>
-                <button onclick="switchStudioCategory('text', this)" class="cat-btn text-slate-400 hover:text-white px-3 py-2 rounded-xl text-xs font-semibold transition">📝 تێکست</button>
-                <button onclick="switchStudioCategory('ai', this)" class="cat-btn text-amber-500 hover:bg-amber-500/10 px-3 py-2 rounded-xl text-xs font-bold transition">🤖 AI</button>
-                <button onclick="switchStudioCategory('export', this)" class="cat-btn text-emerald-400 hover:bg-emerald-500/10 px-3 py-2 rounded-xl text-xs font-bold transition">💾 سەیڤ</button>
-            </div>
-
-            <div id="controlsConsoleArea" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#0c0d14]">
-                </div>
-            
-            <div class="p-3 bg-[#090a0f] text-center border-t border-slate-800/80 text-[11px] text-slate-500 font-bold">
-                دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی
-            </div>
-        </div>
-    </main>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kurd Agency | نرخ و خزمەتگوزارییەکان</title>
 
     <script>
-        // --- 1. State & Setup ---
-        const state = {
-            lang: 'ku', category: 'face', color: '#dc2626',
-            eraserActive: false, cropperInstance: null, fabricInstance: null,
-            history: [], historyIndex: -1, faceLandmarks: null,
-            filters: ['_1977', 'aden', 'brannan', 'brooklyn', 'clarendon', 'earlybird', 'gingham', 'hudson', 'inkwell', 'kelvin', 'lark', 'lofi']
-        };
-
-        const dict = {
-            ku: { crop: 'بڕینی وێنە', removeBg: 'لابردنی باکگراوند (API)', save: 'سەیڤکردن' },
-            ar: { crop: 'قص الصورة', removeBg: 'إزالة الخلفية', save: 'حفظ' },
-            en: { crop: 'Crop Image', removeBg: 'Remove BG (API)', save: 'Save Image' }
-        };
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            initFabricJS();
-            initEraser();
-            initSlider();
-            await loadMediapipe();
-            switchStudioCategory('face', document.querySelector('.cat-btn')); // Load initial tab
-        });
-
-        // --- 2. Mediapipe (Real AI Makeup) ---
-        let faceLandmarker;
-        async function loadMediapipe() {
-            try {
-                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
-                faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-                    baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" },
-                    runningMode: "IMAGE", numFaces: 1
-                });
-                console.log("Mediapipe Ready ✅");
-            } catch (e) { console.error("Mediapipe Error:", e); }
-        }
-
-        async function processMakeup() {
-            const img = document.getElementById('targetImage');
-            const canvas = document.getElementById('makeupCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            if(!faceLandmarker || !img.complete || img.naturalWidth === 0) return;
-            
-            canvas.width = img.clientWidth;
-            canvas.height = img.clientHeight;
-            ctx.clearRect(0,0, canvas.width, canvas.height);
-
-            const results = await faceLandmarker.detect(img);
-            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-                const landmarks = results.faceLandmarks[0];
-                // Lips precise indices mapping
-                const lipsOuter = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146];
-                
-                ctx.beginPath();
-                lipsOuter.forEach((idx, i) => {
-                    const pt = landmarks[idx];
-                    const x = pt.x * canvas.width;
-                    const y = pt.y * canvas.height;
-                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                });
-                ctx.closePath();
-                ctx.fillStyle = state.color;
-                ctx.fill();
-            }
-        }
-
-        // --- 3. Image Loading & Saving to Canvas ---
-        function loadUserPhoto(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const img = document.getElementById('targetImage');
-                img.onload = () => {
-                    const canvas = document.getElementById('baseImageCanvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Resize Fabric and AI canvas
-                    state.fabricInstance.setWidth(img.clientWidth);
-                    state.fabricInstance.setHeight(img.clientHeight);
-                    
-                    saveToHistory();
-                    processMakeup();
-                };
-                img.src = evt.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // --- 4. Remove BG (API Integration) ---
-        async function removeBackgroundAPI() {
-            const canvas = document.getElementById('baseImageCanvas');
-            const dataUrl = canvas.toDataURL('image/png');
-            const blob = await (await fetch(dataUrl)).blob();
-            
-            const modal = document.getElementById('progressPercentageModal');
-            modal.classList.remove('hidden');
-
-            const formData = new FormData();
-            formData.append('size', 'auto');
-            formData.append('image_file', blob);
-
-            try {
-                // YOUR API KEY: He4tD6ufmQfs7od8WzjcLqFH
-                const res = await fetch('https://api.remove.bg/v1.0/removebg', {
-                    method: 'POST',
-                    headers: { 'X-Api-Key': 'He4tD6ufmQfs7od8WzjcLqFH' },
-                    body: formData
-                });
-                
-                if(res.ok) {
-                    const resBlob = await res.blob();
-                    const newImg = new Image();
-                    newImg.onload = () => {
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0,0, canvas.width, canvas.height);
-                        ctx.drawImage(newImg, 0, 0, canvas.width, canvas.height);
-                        saveToHistory();
-                        modal.classList.add('hidden');
-                    };
-                    newImg.src = URL.createObjectURL(resBlob);
-                } else {
-                    alert('هەڵە ڕوویدا لە سڕینەوەی باکگراوند. دڵنیابە باڵانسی API ماوە.');
-                    modal.classList.add('hidden');
-                }
-            } catch(e) {
-                console.error(e);
-                modal.classList.add('hidden');
-                alert('کێشە لە هێڵی ئینتەرنێت هەیە.');
-            }
-        }
-
-        // --- 5. Magic Eraser (Client-side Canvas Erase) ---
-        function initEraser() {
-            const eCanvas = document.getElementById('eraserCanvas');
-            const ctx = eCanvas.getContext('2d');
-            let drawing = false;
-
-            eCanvas.addEventListener('mousedown', () => drawing = true);
-            eCanvas.addEventListener('mouseup', () => {
-                drawing = false; ctx.beginPath();
-                applyEraserToBaseCanvas(); // Commit changes
-            });
-            eCanvas.addEventListener('mousemove', (e) => {
-                if(!drawing || !state.eraserActive) return;
-                const rect = eCanvas.getBoundingClientRect();
-                ctx.lineWidth = 30; ctx.lineCap = 'round';
-                ctx.strokeStyle = 'rgba(255,0,0,0.5)'; // visual red trace
-                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-            });
-        }
-
-        function toggleEraser() {
-            state.eraserActive = !state.eraserActive;
-            const eCanvas = document.getElementById('eraserCanvas');
-            if(state.eraserActive) {
-                const bCanvas = document.getElementById('baseImageCanvas');
-                eCanvas.width = bCanvas.clientWidth;
-                eCanvas.height = bCanvas.clientHeight;
-                eCanvas.style.pointerEvents = 'auto';
-                alert('سڕینەوەی دەستی چالاک کرا! پەنجە بەو شوێنانەدا بهێنە کە دەتەوێت بیسڕیتەوە.');
-            } else {
-                eCanvas.style.pointerEvents = 'none';
-            }
-        }
-
-        function applyEraserToBaseCanvas() {
-            const eCanvas = document.getElementById('eraserCanvas');
-            const bCanvas = document.getElementById('baseImageCanvas');
-            const bCtx = bCanvas.getContext('2d');
-            
-            // Map the visual eraser stroke to the actual high-res canvas coordinates
-            const scaleX = bCanvas.width / eCanvas.width;
-            const scaleY = bCanvas.height / eCanvas.height;
-            
-            bCtx.globalCompositeOperation = 'destination-out';
-            bCtx.drawImage(eCanvas, 0, 0, eCanvas.width, eCanvas.height, 0, 0, bCanvas.width, bCanvas.height);
-            bCtx.globalCompositeOperation = 'source-over'; // Reset
-            
-            // Clear temporary eraser visual canvas
-            eCanvas.getContext('2d').clearRect(0,0, eCanvas.width, eCanvas.height);
-            saveToHistory();
-        }
-
-        // --- 6. UI Controls & Menus ---
-        function switchStudioCategory(cat, btn) {
-            document.querySelectorAll('.cat-btn').forEach(b => { b.classList.remove('bg-amber-500','text-black'); b.classList.add('text-slate-400'); });
-            btn.classList.add('bg-amber-500','text-black');
-            btn.classList.remove('text-slate-400');
-            
-            const panel = document.getElementById('controlsConsoleArea');
-            panel.innerHTML = '';
-
-            if(cat === 'ai') {
-                panel.innerHTML = `
-                    <div class="space-y-3">
-                        <button onclick="removeBackgroundAPI()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold p-3 rounded-xl shadow-lg">✂️ لابردنی باکگراوند (Remove.bg API)</button>
-                        <button onclick="toggleEraser()" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white font-bold">🖌️ سڕینەوەی دەستی (Magic Eraser)</button>
-                        <button onclick="openCropper()" class="w-full bg-blue-600 text-white font-bold p-3 rounded-xl shadow-lg">✂️ بڕینی وێنە (Crop)</button>
-                    </div>
-                    <hr class="border-slate-800 my-4">
-                    <label class="text-xs text-slate-400 block mb-2">دانان لە چوارچێوە (Mockup)</label>
-                    <select onchange="applyMockup(this.value)" class="w-full bg-slate-900 text-white p-2 rounded-xl outline-none">
-                        <option value="none">ئاسایی</option>
-                        <option value="phone">چوارچێوەی مۆبایل</option>
-                    </select>
-                    <label class="text-xs text-slate-400 block mt-4 mb-2">هێڵکاری سەلامەتی (Safe Zones)</label>
-                    <select onchange="applySafeZone(this.value)" class="w-full bg-slate-900 text-white p-2 rounded-xl outline-none">
-                        <option value="none">داخستن</option>
-                        <option value="tiktok">سنووری تیکتۆک (TikTok Verified)</option>
-                    </select>
-                `;
-            } 
-            else if(cat === 'makeup') {
-                panel.innerHTML = `
-                    <div class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mb-4">
-                        <h3 class="text-amber-500 text-xs font-bold mb-2">مەیک ئەپی ئۆتۆماتیکی (Mediapipe)</h3>
-                        <p class="text-[10px] text-slate-400">ڕەنگێک هەڵبژێرە، بە شێوەیەکی زیرەک دەچێتە سەر خاڵی لێوەکان.</p>
-                        <div class="grid grid-cols-6 gap-2 mt-3">
-                            ${['#dc2626', '#be185d', '#9d174d', '#b91c1c', '#ea580c', '#000000'].map(c => `
-                                <button onclick="state.color='${c}'; processMakeup();" class="w-8 h-8 rounded-full border-2 border-transparent hover:border-amber-500" style="background-color: ${c}"></button>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            else if(cat === 'filters') {
-                let html = '<div class="grid grid-cols-3 gap-3">';
-                state.filters.forEach(f => {
-                    html += `<button onclick="applyCssFilter('${f}')" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-bold hover:border-amber-500 text-white">${f}</button>`;
-                });
-                html += '</div>';
-                panel.innerHTML = html;
-            }
-            else if(cat === 'text') {
-                panel.innerHTML = `
-                    <button onclick="addTextLayer()" class="w-full bg-amber-500 text-black font-bold p-3 rounded-xl">➕ زیادکردنی تێکست (Fabric.js)</button>
-                    <div class="mt-4 grid grid-cols-2 gap-2">
-                        <button onclick="changeFont('Noto Kufi Arabic')" class="p-2 bg-slate-900 text-white text-xs rounded-lg">Kufi Arabic</button>
-                        <button onclick="changeFont('Tajawal')" class="p-2 bg-slate-900 text-white text-xs rounded-lg">Tajawal</button>
-                        <button onclick="changeFont('Lalezar')" class="p-2 bg-slate-900 text-white text-xs rounded-lg">Lalezar</button>
-                    </div>
-                `;
-            }
-            else if(cat === 'export') {
-                panel.innerHTML = `
-                    <button onclick="exportFinalCombinedImage()" class="w-full bg-emerald-500 text-black font-black p-4 rounded-xl shadow-lg text-sm">📥 سەیڤکردن بۆ مۆبایل / کۆمپیوتەر</button>
-                `;
-            }
-        }
-
-        // --- 7. Saving/Exporting (Combined Canvas) ---
-        function exportFinalCombinedImage() {
-            const baseCanvas = document.getElementById('baseImageCanvas');
-            const makeupCanvas = document.getElementById('makeupCanvas');
-            const fabricCanvas = document.getElementById('fabricCanvas');
-            
-            const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = baseCanvas.width;
-            exportCanvas.height = baseCanvas.height;
-            const ctx = exportCanvas.getContext('2d');
-
-            // 1. Draw base image (with any applied CSSgram filter if possible, though CSSgram is DOM based. For true export, we redraw).
-            ctx.filter = document.getElementById('canvasViewport').style.filter || 'none';
-            ctx.drawImage(baseCanvas, 0, 0);
-            ctx.filter = 'none';
-
-            // 2. Draw Makeup (Scale up to high res)
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.drawImage(makeupCanvas, 0, 0, makeupCanvas.width, makeupCanvas.height, 0, 0, exportCanvas.width, exportCanvas.height);
-            ctx.globalCompositeOperation = 'source-over';
-
-            // 3. Draw Fabric Text
-            ctx.drawImage(fabricCanvas, 0, 0, fabricCanvas.width, fabricCanvas.height, 0, 0, exportCanvas.width, exportCanvas.height);
-
-            // 4. Draw Watermark
-            ctx.font = "bold 24px 'Noto Kufi Arabic'";
-            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-            ctx.fillText("دروستکراوە لە لایەن ئاریان علی : کورد ئەجێنسی", 40, exportCanvas.height - 40);
-
-            // Download
-            const link = document.createElement('a');
-            link.download = `KurdFaceStudio_Export_${Date.now()}.png`;
-            link.href = exportCanvas.toDataURL('image/png');
-            link.click();
-        }
-
-        // --- Helper Tools (Cropper, Fabric, Filters, History) ---
-        function openCropper() {
-            const canvas = document.getElementById('baseImageCanvas');
-            document.getElementById('cropImageHolder').src = canvas.toDataURL();
-            document.getElementById('cropModal').style.display = 'flex';
-            if(state.cropperInstance) state.cropperInstance.destroy();
-            state.cropperInstance = new Cropper(document.getElementById('cropImageHolder'), { viewMode: 1 });
-        }
-        function applyCrop() {
-            const croppedCanvas = state.cropperInstance.getCroppedCanvas();
-            const bCanvas = document.getElementById('baseImageCanvas');
-            const bCtx = bCanvas.getContext('2d');
-            bCanvas.width = croppedCanvas.width;
-            bCanvas.height = croppedCanvas.height;
-            bCtx.clearRect(0,0, bCanvas.width, bCanvas.height);
-            bCtx.drawImage(croppedCanvas, 0, 0);
-            
-            document.getElementById('cropModal').style.display = 'none';
-            state.cropperInstance.destroy();
-            saveToHistory(); processMakeup();
-        }
-        function cancelCrop() { document.getElementById('cropModal').style.display = 'none'; state.cropperInstance.destroy(); }
-
-        function initFabricJS() {
-            state.fabricInstance = new fabric.Canvas('fabricCanvas', { preserveObjectStacking: true });
-            document.getElementById('fabricWrapper').style.pointerEvents = 'auto'; // allow interaction
-        }
-        function addTextLayer() {
-            const txt = new fabric.IText('کورد فەیس', { left: 100, top: 100, fontFamily: 'Noto Kufi Arabic', fill: '#ffffff', fontSize: 40, shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 5 }) });
-            state.fabricInstance.add(txt);
-            state.fabricInstance.setActiveObject(txt);
-        }
-        function changeFont(font) {
-            const obj = state.fabricInstance.getActiveObject();
-            if(obj) { obj.set({ fontFamily: font }); state.fabricInstance.renderAll(); }
-        }
-
-        function applyCssFilter(filterName) {
-            document.getElementById('canvasViewport').className = `relative w-full h-full rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center bg-[#090b11] border border-slate-800/50 ${filterName}`;
-        }
-
-        function applyMockup(val) { document.getElementById('mockupFrameContainer').className = val === 'phone' ? 'mockup-phone transition-all duration-300 flex items-center justify-center' : 'transition-all duration-300 flex items-center justify-center'; }
-        function applySafeZone(val) { document.getElementById('safeZoneOverlay').style.display = val === 'tiktok' ? 'block' : 'none'; }
-
-        function saveToHistory() {
-            const canvas = document.getElementById('baseImageCanvas');
-            state.history.push(canvas.toDataURL());
-            state.historyIndex++;
-        }
-        function executeUndoStep() {
-            if(state.historyIndex > 0) {
-                state.historyIndex--;
-                restoreCanvas(state.history[state.historyIndex]);
-            }
-        }
-        function restoreCanvas(dataUrl) {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.getElementById('baseImageCanvas');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0,0,canvas.width, canvas.height);
-                ctx.drawImage(img,0,0);
-                processMakeup();
-            };
-            img.src = dataUrl;
-        }
-
-        // Before/After Slider init
-        function initSlider() {
-            const handle = document.getElementById('sliderHandle');
-            const beforeImg = document.getElementById('beforeImage');
-            let dragging = false;
-            handle.addEventListener('mousedown', () => dragging = true);
-            document.addEventListener('mouseup', () => dragging = false);
-            document.addEventListener('mousemove', (e) => {
-                if(!dragging) return;
-                const bounds = document.getElementById('canvasViewport').getBoundingClientRect();
-                let pct = ((e.clientX - bounds.left) / bounds.width) * 100;
-                handle.style.left = `${pct}%`;
-                beforeImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-            });
-        }
-        function toggleBeforeAfterCurtain() {
-            const container = document.getElementById('beforeAfterContainer');
-            if(container.style.display === 'block') { container.style.display = 'none'; } 
-            else { document.getElementById('beforeImage').src = state.history[0]; container.style.display = 'block'; }
-        }
-
-        function toggleLightDarkModeSystem() { document.documentElement.classList.toggle('dark'); document.documentElement.classList.toggle('light'); }
+    !function (w, d, t) {
+      w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+    var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+    ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+      ttq.load('D7D1KMRC77U0MJ45VCH0'); 
+      ttq.page();
+    }(window, document, 'ttq');
     </script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: #080c14;
+            background-image: 
+                radial-gradient(circle at 50% 0%, #131c33, transparent),
+                radial-gradient(circle at 100% 100%, #0a0f1d, transparent);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #f1f5f9;
+            padding: 20px 12px;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 5px 10px;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 100;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: #38bdf8;
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 360px;
+            height: 100%;
+            background: #0b0f19;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.7);
+            z-index: 99;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 80px 20px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar.open { right: 0; }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 98;
+            display: none;
+        }
+
+        .sidebar-overlay.show { display: block; }
+
+        .menu-item-collapse {
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+
+        .menu-header-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            color: #38bdf8;
+            padding: 14px 16px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            text-align: right;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-header-btn::after {
+            content: '▼';
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: 0.3s;
+        }
+        .menu-item-collapse.active .menu-header-btn::after {
+            transform: rotate(180deg);
+        }
+
+        .menu-content-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-text-p {
+            padding: 15px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            text-align: justify;
+            line-height: 1.7;
+        }
+
+        .menu-social-list {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .menu-social-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .menu-social-link svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .cv-link-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            color: #22d3ee;
+            padding: 14px 16px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+
+        .brand-name {
+            font-size: 1.9rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .brand-name span { color: #38bdf8; }
+
+        .main-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(0, 0, 0, 0.4));
+            padding: 14px 22px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
+        }
+
+        .top-instruction-badge {
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px dashed #38bdf8;
+            padding: 14px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #fff;
+            text-align: center;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.05);
+        }
+        
+        .hand-pointer {
+            display: inline-block;
+            animation: tap-animation 0.8s infinite alternate;
+            font-size: 1.2rem;
+        }
+
+        @keyframes tap-animation {
+            from { transform: translateY(0) scale(1); }
+            to { transform: translateY(-4px) scale(1.1); }
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 5px 2px 15px 2px;
+            margin-bottom: 15px;
+            scrollbar-width: none;
+        }
+
+        .tabs-container::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            flex: 0 0 auto;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
+            padding: 11px 18px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            color: #070a13;
+            border-color: #38bdf8;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+        }
+
+        .scroll-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #38bdf8;
+            animation: bounceLeft 1s infinite alternate;
+        }
+        .scroll-arrow svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        @keyframes bounceLeft {
+            0% { transform: translateX(3px); }
+            100% { transform: translateX(-3px); }
+        }
+
+        .content-section { 
+            display: none; 
+            animation: fadeIn 0.4s ease-in-out forwards; 
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .content-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .notice-badge {
+            background: rgba(56, 189, 248, 0.05);
+            border-right: 4px solid #38bdf8;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+            text-align: justify;
+        }
+
+        .notice-badge-red {
+            background: rgba(239, 68, 68, 0.07);
+            border-right: 4px solid #ef4444;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            color: #fca5a5;
+            text-align: justify;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        .custom-request-badge {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(217, 119, 6, 0.2));
+            border: 1px solid rgba(234, 179, 8, 0.4);
+            color: #fef08a;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);
+        }
+        .custom-request-badge:hover {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(217, 119, 6, 0.3));
+            border-color: #eab308;
+            transform: translateY(-1px);
+        }
+
+        .animated-arrow {
+            display: inline-block;
+            animation: moveArrow 1s infinite alternate;
+            color: #fef08a;
+            font-size: 1.1rem;
+        }
+
+        @keyframes moveArrow {
+            0% { transform: translateX(4px); }
+            100% { transform: translateX(-4px); }
+        }
+
+        .grid-container { display: flex; flex-direction: column; gap: 12px; }
+
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: #38bdf8;
+            background: rgba(15, 23, 42, 0.9);
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .card-info { 
+            display: flex; 
+            flex-direction: column; 
+            text-align: right; 
+            flex-grow: 1;
+            padding-left: 15px;
+        }
+        
+        .card-title { 
+            font-size: 1.1rem; 
+            font-weight: 900; 
+            color: #ffffff !important;
+            direction: rtl;
+            text-align: right;
+        }
+        .card-sub { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+        .card-line {
+            width: 1px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.12);
+            margin: 0 15px;
+        }
+
+        .card-price {
+            background: rgba(56, 189, 248, 0.08);
+            color: #38bdf8;
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-weight: 900;
+            font-size: 1.05rem;
+            white-space: nowrap;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            direction: ltr;
+            text-align: center;
+            min-width: 110px;
+            box-shadow: inset 0 2px 8px rgba(56, 189, 248, 0.05);
+        }
+
+        .service-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 18px;
+            padding: 22px;
+            text-align: center;
+            border-top: 4px solid #38bdf8;
+            margin-bottom: 12px;
+        }
+        .service-card:last-child { margin-bottom: 0; }
+
+        .service-icon { width: 44px; height: 44px; fill: #38bdf8; margin-bottom: 14px; }
+        .service-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff; }
+        .service-desc { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; }
+
+        .feedback-box { width: 100%; }
+        .feedback-title { font-size: 1.15rem; font-weight: 800; text-align: center; margin-bottom: 15px; color: #fff; }
+        .form-group { margin-bottom: 12px; }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .form-input:focus, .form-textarea:focus { border-color: #38bdf8; }
+        .form-textarea { resize: none; height: 80px; }
+
+        .rating-select { display: flex; gap: 6px; margin-bottom: 15px; justify-content: center; direction: ltr; }
+        .star-icon { font-size: 1.8rem; color: #334155; cursor: pointer; transition: 0.2s; }
+        .star-icon.active { color: #fbbf24; }
+
+        .submit-btn {
+            width: 100%; background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: #070a13; border: none;
+            padding: 14px; border-radius: 12px; font-weight: 800; font-size: 1rem;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
+        }
+        .submit-btn:hover { transform: translateY(-1px); }
+        .submit-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
+
+        .reviews-list {
+            margin-top: 20px; display: flex; flex-direction: column;
+            gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 2px;
+        }
+        .review-item { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); padding: 14px; border-radius: 14px; }
+        .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .review-name { font-weight: 700; font-size: 0.95rem; color: #38bdf8; }
+        .review-stars { color: #fbbf24; font-size: 0.9rem; }
+        .review-text { font-size: 0.9rem; color: #cbd5e1; }
+
+        .feedback-whatsapp-box {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+        }
+        .feedback-whatsapp-text { font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
+        .btn-feedback-wa {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 10px 20px; border-radius: 10px; text-decoration: none;
+            color: #fff; font-weight: 700; font-size: 0.9rem; background: #16a34a;
+            gap: 8px; direction: ltr; transition: 0.3s;
+        }
+        .btn-feedback-wa svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .payment-box { width: 100%; }
+        .payment-title { font-size: 1.15rem; font-weight: 800; text-align: center; margin-bottom: 15px; color: #22d3ee; }
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        
+        .payment-item {
+            padding: 14px 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-weight: 800; font-size: 0.9rem; gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; text-decoration: none; transition: 0.3s;
+            text-align: center;
+        }
+        .payment-item:hover { transform: scale(1.02); }
+
+        .p-fib { background: rgba(56, 189, 248, 0.06); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+        .p-fastpay { background: rgba(244, 63, 94, 0.06); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.2); }
+        .p-qi { background: rgba(245, 158, 11, 0.06); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .p-nass { background: rgba(239, 68, 68, 0.06); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .payment-item-icon {
+            width: 38px; height: 38px; background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        }
+        .payment-item-icon svg { width: 22px; height: 22px; fill: currentColor; }
+
+        .payment-number-box {
+            background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15);
+            padding: 12px; border-radius: 14px; text-align: center; font-weight: 900;
+            font-size: 1.25rem; color: #38bdf8; display: flex; align-items: center;
+            justify-content: center; gap: 10px; direction: ltr; margin-top: 15px;
+        }
+
+        .footer-note { text-align: center; font-size: 0.75rem; color: #475569; margin-top: 25px; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .modal-overlay.show { display: flex; }
+        
+        .modal-content-box {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            background: #0f172a;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            animation: scaleIn 0.3s ease-out forwards;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        select.form-input option {
+            background-color: #0f172a;
+            color: #fff;
+        }
+
+        .age-options-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .age-opt-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 8px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex: 1 1 calc(33.333% - 8px);
+            text-align: center;
+        }
+        .age-opt-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="sidebar" id="sidebar">
+        
+        <div class="menu-item-collapse" id="collapse-about">
+            <button class="menu-header-btn" onclick="toggleCollapse('collapse-about')">دەربارەی کورد ئەجێنسی</button>
+            <div class="menu-content-body">
+                <div class="menu-text-p">
+                    کورد ئەجێنسی لە ساڵی 2020 دروستکراوە و هەتا ئێستا دەستمان هەبووە لە دروستکردنی چەندین وێب سایت، ئەپڵیکەیشن، و سیستەمی پێشکەوتوو. ئێمە لێرەین بۆ پەرەپێدان و گەشەپێدانی تەواوی کار و بزنسەکان لە جیهانی دیجیتاڵیدا. ئامانجمان دابینکردنی باشترین خزمەتگوزاری ڕیکلامی و تەکنەلۆژییە بە بەرزترین کوالیتی و گونجاوترین نرخ، تا یارمەتی بڕاندەکان بدەین بگەنە لوتکە و زۆرترین فرۆش بەدەست بهێنن.
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item-collapse" id="collapse-office">
+            <button class="menu-header-btn" onclick="toggleCollapse('collapse-office')">ناونیشانی ئۆفیس</button>
+            <div class="menu-content-body">
+                <div class="menu-text-p">
+                    لە ئێستادا خەریکی دروستی کردنی ئۆفیسین لە سلێمانی بە نزیکترین کات ناونیشانی تەواوی ئۆفیسەکە دا ئەنێین وە لە داهاتویەکی نزیکدا ئۆفیسمان لە هەموو شارەکانی کوردستان ئەبێت.
+                    <br><br>
+                    <strong>خاوەنی Kurd Agency Company:</strong> ئاریان علی عبداللە
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item-collapse" id="collapse-socials">
+            <button class="menu-header-btn" onclick="toggleCollapse('collapse-socials')">ئێمە لە سۆشیاڵ میدیا</button>
+            <div class="menu-content-body">
+                <div class="menu-social-list">
+                    <a href="https://www.tiktok.com/@kurd.agency?_r=1&_t=ZS-96lUyAmKINR" target="_blank" class="menu-social-link" style="background: #000;">
+                        <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.836 4.836 0 0 1-3.23-1.22 4.851 4.851 0 0 1-1.22-3.23h-3.82v12.03a3.197 3.197 0 0 1-3.19 3.19 3.197 3.197 0 0 1-3.19-3.19 3.197 3.197 0 0 1 3.19-3.19c.29 0 .58.03.86.08V7.52a8.03 8.03 0 0 0-8.86 8c0 4.42 3.58 8 8 8s8-3.58 8-8V11.4c1.39 1 3.1 1.6 4.95 1.6v-3.82a4.843 4.843 0 0 1-3.4-2.49z"/></svg>
+                        تیکتۆکی فەرمی کورد ئەجێنسی
+                    </a>
+                    <a href="https://www.facebook.com/share/1CAmPqe2Pj/?mibextid=wwXIfr" target="_blank" class="menu-social-link" style="background: #1877f2;">
+                        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        فەیسبووکی فەرمی کورد ئەجێنسی
+                    </a>
+                    <a href="https://www.instagram.com/aryann.tech?igsh=MXEzcWozYWZwaHVyOA%3D%3D&utm_source=qr" target="_blank" class="menu-social-link" style="background: #e1306c;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+                    </svg>
+                    ئینستاگرام
+                </a>
+                <a href="https://snapchat.com/t/54mPJKNh" target="_blank" class="menu-social-link" style="background: #fffc00; color: #000;">
+                    <svg viewBox="0 0 24 24"><path d="M12 2c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.79-2.79C10.09 18.64 11.03 19 12 19c4.97 0 9-4.03 9-9 0-4.97-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+                    سناپچات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <a href="https://wa.me/9647510386174?text=سڵاو%20کورد%20ئەجێنسی،%20من%20دەمەوێت%20وەکو%20کارمەند%20سیڤی%20(CV)%20خۆم%20بنێرم%20بۆ%20داواکاری%20کار." class="cv-link-btn" target="_blank">
+        <span>ناردنی CV بۆ کارکردن</span>
+        <span>➔</span>
+    </a>
+
+</div>
+
+<div class="modal-overlay" id="order-modal-overlay">
+    <div class="modal-content-box" id="order-modal">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+            <h3 style="color: #38bdf8; font-size: 1.1rem; font-weight: 800;" id="modal-title">زانیاری داواکاری</h3>
+            <button onclick="closeOrderModal()" style="background:none; border:none; color:#ef4444; font-size:1.8rem; line-height:1; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="form-group">
+            <input type="text" id="order-page-name" class="form-input" placeholder="ناوی تەواوی پەیج" oninput="validateForm()">
+        </div>
+        
+        <div class="form-group">
+            <input type="text" id="order-biz-type" class="form-input" placeholder="جۆری کارەکەی چییە" oninput="validateForm()">
+        </div>
+        
+        <div class="form-group" id="cities-group">
+            <input type="text" id="order-cities" class="form-input" placeholder="ئەو شارانەی ئەتەوێت سپۆنسەرەکە ببینن بینوسە" oninput="validateForm()">
+        </div>
+        
+        <div class="form-group" id="audience-group" style="display: none;">
+            <select id="order-audience" class="form-input" style="appearance: auto; cursor: pointer; color: #94a3b8;" onchange="this.style.color='#fff'; validateForm()">
+                <option value="" disabled selected hidden>بینەر دیاری بکە (کورد یان عەرەب)</option>
+                <option value="کورد" style="color: #000;">کورد</option>
+                <option value="عەرەب" style="color: #000;">عەرەب</option>
+                <option value="کورد و عەرەب" style="color: #000;">کورد و عەرەب</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select id="order-gender" class="form-input" style="appearance: auto; cursor: pointer; color: #94a3b8;" onchange="this.style.color='#fff'; validateForm()">
+                <option value="" disabled selected hidden>ڕەگەز دیاری بکە</option>
+                <option value="هەردوو ڕەگەز" style="color: #000;">هەردوو ڕەگەز</option>
+                <option value="نێر" style="color: #000;">نێر (پیاوان)</option>
+                <option value="مێ" style="color: #000;">مێ (ئافرەتان)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label style="color:#cbd5e1; font-size:0.85rem; font-weight:700; display:block; margin-bottom:8px;">تەمەن دیاری بکە (دەتوانیت زیاتر لە یەکێک هەڵبژێریت)</label>
+            <div class="age-options-grid">
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, 'هەمووی')">هەمووی</button>
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, '18_24')">18_24</button>
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, '24_36')">24_36</button>
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, '36_45')">36_45</button>
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, '45_55')">45_55</button>
+                <button type="button" class="age-opt-btn" onclick="toggleAge(this, '55_65')">55_65</button>
+            </div>
+            <input type="hidden" id="order-age" value="">
+        </div>
+
+        <div class="form-group" id="days-select-group">
+            <label style="color:#cbd5e1; font-size:0.85rem; font-weight:700; display:block; margin-bottom:8px;">چەند ڕۆژت دەوێت بۆ سپۆنسەر؟</label>
+            <select id="order-days" class="form-input" style="appearance: auto; cursor: pointer; color: #fff;" onchange="validateForm()">
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+            <select id="order-payment" class="form-input" style="appearance: auto; cursor: pointer; color: #94a3b8;" onchange="this.style.color='#fff'; validateForm()">
+                <option value="" disabled selected hidden>شێوزی پارەدان هەڵبژێرە</option>
+                <option value="FIB" style="color: #000;">FIB</option>
+                <option value="FASTPAY" style="color: #000;">FASTPAY</option>
+                <option value="QCARD" style="color: #000;">QCARD</option>
+                <option value="ASIAPAY" style="color: #000;">ASIAPAY</option>
+            </select>
+        </div>
+
+        <!-- Added Notice 1: Views prediction info -->
+        <div style="font-size: 0.85rem; color: #38bdf8; margin-bottom: 12px; text-align: justify; line-height: 1.5; font-weight: 700; background: rgba(56,189,248,0.08); padding: 10px; border-radius: 10px;" id="modal-views-note">
+        </div>
+
+        <!-- Added Notice 2: Engagement disclaimer -->
+        <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 12px; text-align: justify; line-height: 1.5; font-weight: 600; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+            نامە و لایک و کۆمێنت و فۆڵۆو بەدەست ئەو کەسانەیە کە سپۆنسەرەکە ئەبینن، ئەوان بڕیار ئەدەن ئەو شتانە بکەن یان نا.
+        </div>
+
+        <!-- Added Checkbox for Terms -->
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: rgba(234, 179, 8, 0.06); padding: 10px; border-radius: 10px; border: 1px solid rgba(234, 179, 8, 0.2);">
+            <input type="checkbox" id="terms-check" style="width: 18px; height: 18px; cursor: pointer; accent-color: #38bdf8;" onchange="validateForm()">
+            <label for="terms-check" style="color: #fef08a; font-size: 0.88rem; font-weight: 700; cursor: pointer; user-select: none;">من ڕەزامەندم بە مەرج و ڕێنماییەکان</label>
+        </div>
+
+        <div style="font-size: 0.85rem; color: #fca5a5; margin-bottom: 15px; text-align: justify; line-height: 1.6; font-weight: 700;" id="modal-note">
+            تێبینی ڕۆژی سپۆنەسەرەکان بە دیاری کردنی پارە ئەگۆڕێت و تکایە زانیاریەکان بە وردی پڕ بکەرەوە
+        </div>
+
+        <!-- Added Ending Banner Message -->
+        <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.25)); border: 1px solid rgba(56, 189, 248, 0.35); padding: 12px; border-radius: 12px; text-align: center; color: #fff; font-size: 0.85rem; font-weight: 800; margin-bottom: 15px; box-shadow: inset 0 2px 8px rgba(56, 189, 248, 0.1);">
+            سوپاس بۆ هەڵبژاردنی کوڕد ئەجێنسی، ئەوەی لە توانای ئێمە بێت پێشکەشتان ئەکەین، قزانجی ئێوە قازانجی ئێمەیە
+        </div>
+
+        <button class="submit-btn" id="submit-order-btn" onclick="submitOrder()" disabled>ناردنی داواکاری بۆ وەتسئەپ</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="top-bar">
+        <div class="menu-btn" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="brand-name" style="margin: 0;">KURD <span>AGENCY</span></div>
+    </div>
+
+    <div class="header">
+        <div class="main-title">نرخ و خزمەتگوزاریەکانی کورد ئەجێنسی ببینە داوای بکە</div>
+        <div class="top-instruction-badge">
+            <span class="hand-pointer">👇</span>
+            تکایە بۆ ویستنی هەر سپۆنسەر و خزمەتگوزاریەک تەنیا پەنجەی لێبدە
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="openTab(event, 'tiktok-biz')">
+            <svg viewBox="0 0 24 24" style="fill: #ffffff !important; filter: drop-shadow(-1px -1px 0px #00f2fe) drop-shadow(1px 1px 0px #fe0979); overflow: visible;"><path d="M19.59 6.69a4.836 4.836 0 0 1-3.23-1.22 4.851 4.851 0 0 1-1.22-3.23h-3.82v12.03a3.197 3.197 0 0 1-3.19 3.19 3.197 3.197 0 0 1-3.19-3.19 3.197 3.197 0 0 1 3.19-3.19c.29 0 .58.03.86.08V7.52a8.03 8.03 0 0 0-8.86 8c0 4.42 3.58 8 8 8s8-3.58 8-8V11.4c1.39 1 3.1 1.6 4.95 1.6v-3.82a4.843 4.843 0 0 1-3.4-2.49z"/></svg>
+            ... سپۆنسەری تیکتۆک (بزنس)
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'tiktok-pers')">
+            <svg viewBox="0 0 24 24" style="fill: #ffffff !important; filter: drop-shadow(-1px -1px 0px #00f2fe) drop-shadow(1px 1px 0px #fe0979); overflow: visible;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            ... سپۆنسەری تیکتۆک (شەخسی)
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'facebook-ads')">
+            <svg viewBox="0 0 24 24" style="fill: #1877f2 !important;"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            سپۆنسەری فەیسبووک
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'instagram-ads')">
+            <svg viewBox="0 0 24 24">
+                <defs>
+                    <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#f09433" />
+                        <stop offset="25%" stop-color="#e6683c" />
+                        <stop offset="50%" stop-color="#dc2743" />
+                        <stop offset="75%" stop-color="#cc2366" />
+                        <stop offset="100%" stop-color="#bc1888" />
+                    </linearGradient>
+                </defs>
+                <path style="fill: url(#ig-grad) !important;" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+            </svg>
+            سپۆنسەری ئینستاگرام
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'snapchat-ads')">
+            <svg viewBox="0 0 24 24" style="fill: #fffc00 !important; filter: drop-shadow(0px 0px 1px #000);"><path d="M12 2c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.79-2.79C10.09 18.64 11.03 19 12 19c4.97 0 9-4.03 9-9 0-4.97-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+            سپۆنسەری سناپچات
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'other-services')">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            خزمەتگوزاریەکانی تر
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'payment-tab')" style="color: #22d3ee; border-color: rgba(34, 211, 238, 0.3);">
+            <svg viewBox="0 0 24 24" style="fill: #22d3ee !important;"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8z"/></svg>
+            ڕێگاکانی پارەدان
+        </button>
+        <span class="scroll-arrow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span>
+        <button class="tab-btn" onclick="openTab(event, 'feedback-tab')" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.3);">
+            <svg viewBox="0 0 24 24" style="fill: #fbbf24 !important;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+            ڕەخنە و پێشنیارەکان
+        </button>
+    </div>
+
+    <div id="tiktok-biz" class="content-section active">
+        <div class="grid-container">
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '١٥،٠٠٠ بۆ ٣٠،٠٠٠ بینەر', '15,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">١٥،٠٠٠ بۆ ٣٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">15,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '٣٠،٠٠٠ بۆ ٤٠،٠٠٠ بینەر', '25,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٣٠،٠٠٠ بۆ ٤٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">25,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '٤٠،٠٠٠ بۆ ٦٠،٠٠٠ بینەر', '35,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٤٠،٠٠٠ بۆ ٦٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">35,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '٦٠،٠٠٠ بۆ ٩٠،٠٠٠ بینەر', '45,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٦٠،٠٠٠ بۆ ٩٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">45,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '۹۰٫۰۰۰ بینەر بۆ ۱۱۰٫۰۰ بینەر', '55,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">۹۰٫۰۰۰ بینەر بۆ ۱۱۰٫۰۰ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">55,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک بزنس', '۱۱۰٫۰۰۰ بێنەر بۆ ۱٦۰٫۰۰ بینەر', '65,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">۱۱۰٫۰۰۰ بێنەر بۆ ۱٦۰٫۰۰ بینەر</span>
+                    <span class="card-sub">بۆ فرۆشتن و کار و بزنس</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">65,000 IQD</div>
+            </a>
+        </div>
+        <div class="custom-request-badge" onclick="openCustomOrderModal('تیکتۆک بزنس')">
+            <span>ئەگەر پێویستت بە بڕە پارەیەکی دیاریکراوە بۆ سپۆنسەر لێرە بنووسە</span>
+            <span class="animated-arrow">➔</span>
+        </div>
+        <div class="notice-badge-red">
+            تێبینی: لە سپۆنسەری تیکتۆک ناتوانرێت شارەکان دیاری بکرێت سەد لە سەد بەڵام ئەتوانین وا بکەین هەموو بینەرەکان کورد بن یان عەرەب یان هەردوکی کورد و عەرەب وە لایک و کۆمێنت و فۆڵۆو بە دەست ئەو کەسانەیە کە سپۆنسەرەکە ئەبینن.
+        </div>
+    </div>
+
+    <div id="tiktok-pers" class="content-section">
+        <div class="grid-container">
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک شەخسی', '١٥،٠٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر', '12,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">١٥،٠٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">پۆستی شەخسی و ئاسایی</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">12,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک شەخسی', '٣٠،٠٠٠ بینەر بۆ ٥٠،٠٠٠ بینەر', '17,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٣٠،٠٠٠ بینەر بۆ ٥٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">پۆستی شەخسی و ئاسایی</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">17,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک شەخسی', '٥٠،٠٠٠ بینەر بۆ ٨٠،٠٠٠ بینەر', '20,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٥٠،٠٠٠ بینەر بۆ ٨٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">پۆستی شەخسی و ئاسایی</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">20,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک شەخسی', '٨٠،٠٠٠ بینەر بۆ ١٣٠،٠٠٠ بینەر', '25,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">٨٠،٠٠٠ بینەر بۆ ١٣٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">پۆستی شەخسی و ئاسایی</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">25,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('تیکتۆک شەخسی', '١٣٠،٠٠٠ بینەر بۆ ٢٥٠،٠٠٠ بینەر', '45,000 IQD'); ttq.track('InitiateCheckout');" class="card">
+                <div class="card-info">
+                    <span class="card-title">١٣٠،٠٠٠ بینەر بۆ ٢٥٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">پۆستی شەخسی و ئاسایی</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">45,000 IQD</div>
+            </a>
+        </div>
+        <div class="custom-request-badge" onclick="openCustomOrderModal('تیکتۆک شەخسی')">
+            <span>ئەگەر پێویستت بە بڕە پارەیەکی دیاریکراوە بۆ سپۆنسەر لێرە بنووسە</span>
+            <span class="animated-arrow">➔</span>
+        </div>
+        <div class="notice-badge-red">
+            تێبینی: لە سپۆنسەری تیکتۆک ناتوانرێت شارەکان دیاری بکرێت سەد لە سەد بەڵام ئەتوانین وا بکەین هەموو بینەرەکان کورد بن یان عەرەب یان هەردوکی کورد و عەرەب وە لایک و کۆمێنت و فۆڵۆو بە دەست ئەو کەسانەیە کە سپۆنسەرەکە ئەبینن.
+        </div>
+    </div>
+
+    <div id="facebook-ads" class="content-section">
+        <div class="notice-badge">
+            ئەم سپۆنسەره تایبەتە بە فرۆشتن و نامە و پەیوەندی لە فەیسبووک، سپۆنسەرەکە ئەچێتە پێش چاوی ئەو کەسانەی پێویستیان بە بابەتەکەی تۆیە.
+        </div>
+        <div class="grid-container">
+            <a href="javascript:void(0)" onclick="openOrderModal('فەیسبووک', '٢،٥٠٠ بینەر بۆ ١٠،٠٠٠ بینەر', '10,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٢،٥٠٠ بینەر بۆ ١٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">10,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('فەیسبووک', '٣،٧٥٠ بینەر بۆ ١٥،٠٠٠ بینەر', '15,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٣،٧٥٠ بینەر بۆ ١٥،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">15,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('فەیسبووک', '٥،٠٠٠ بینەر بۆ ٢٠،٠٠٠ بینەر', '20,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٥،٠٠٠ بینەر بۆ ٢٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">20,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('فەیسبووک', '٦،٢٥٠ بینەر بۆ ٢٥،٠٠٠ بینەر', '25,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٦،٢٥٠ بینەر بۆ ٢٥،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">25,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('فەیسبووک', '٧،٥٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر', '30,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٧،٥٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">30,000 IQD</div>
+            </a>
+        </div>
+        <div class="custom-request-badge" onclick="openCustomOrderModal('فەیسبووک')">
+            <span>ئەگەر پێویستت بە بڕە پارەیەکی دیاریکراوە بۆ سپۆنسەر لێرە بنووسە</span>
+            <span class="animated-arrow">➔</span>
+        </div>
+        <div class="notice-badge-red" style="margin-top:16px;">
+            <strong>تێبینی فەیسبووک:</strong> لە سپۆنسەری فەیسبووکتاندا، پێویستە لە ڕێگەی پەیجی فەیسبووکەکەوە ئێمە بکەن بە ئەدمین تا بتوانین کارەکانتان بۆ ڕێکبخەین. وە ڕۆژی سپۆنسەرەکان بە پێی پارەکان دیاری ئەکرێت.
+        </div>
+    </div>
+
+    <div id="instagram-ads" class="content-section">
+        <div class="notice-badge">
+            ئەم سپۆنسەره تایبەتە بە فرۆشتن و نامە و پەیوەندی لە ئینستاگرام، سپۆنسەرەکە ئەچێتە پێش چاوی ئەو کەسانەی پێویستیان بە بابەتەکەی تۆیە.
+        </div>
+        <div class="grid-container">
+            <a href="javascript:void(0)" onclick="openOrderModal('ئینستاگرام', '٢،٥٠٠ بینەر بۆ ١٠،٠٠٠ بینەر', '10,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٢،٥٠٠ بینەر بۆ ١٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">10,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('ئینستاگرام', '٣،٧٥٠ بینەر بۆ ١٥،٠٠٠ بینەر', '15,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٣،٧٥٠ بینەر بۆ ١٥،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">15,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('ئینستاگرام', '٥،٠٠٠ بینەر بۆ ٢٠،٠٠٠ بینەر', '20,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٥،٠٠٠ بینەر بۆ ٢٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">20,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('ئینستاگرام', '٦،٢٥٠ بینەر بۆ ٢٥،٠٠٠ بینەر', '25,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٦،٢٥٠ بینەر بۆ ٢٥،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">25,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('ئینستاگرام', '٧،٥٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر', '30,000 IQD')" class="card">
+                <div class="card-info"><span class="card-title">٧،٥٠٠ بینەر بۆ ٣٠،٠٠٠ بینەر</span></div>
+                <div class="card-line"></div>
+                <div class="card-price">30,000 IQD</div>
+            </a>
+        </div>
+        <div class="custom-request-badge" onclick="openCustomOrderModal('ئینستاگرام')">
+            <span>ئەگەر پێویستت بە بڕە پارەیەکی دیاریکراوە بۆ سپۆنسەر لێرە بنووسە</span>
+            <span class="animated-arrow">➔</span>
+        </div>
+        <div class="notice-badge-red" style="margin-top:16px;">
+            <strong>تێبینی ئینستاگرام:</strong> لە سپۆنسەر ئینستاگرام پێویستە ئینستاگرامەکەت کۆنێکت بێت بە پەیجێکی فەیسبوک دواتر لە پەیج فەیسبووکەکە ئەمان کەیت بە ئەدمین لە ڕێگەی پەیجی فەیسبووکەکە سپۆنسەر بۆ ئینستاگرامەکەت ئەکرێت و پەیجی فەیسبوکەکە تەنیا بۆ ئەوەیە سپۆنسەری ئینستاگرامەکە لای کەس دەرناکەوێت. وە ڕۆژی سپۆنسەرەکان بە پێی پارەکان دیاری ئەکرێت.
+        </div>
+    </div>
+
+    <div id="snapchat-ads" class="content-section">
+        <div class="notice-badge">
+            <strong>... سپۆنسەری سناپچات:</strong> تایبەتە بە زیادکردنی فۆڵۆوەر وە شار, تەمەن، و ڕەگەز بە خواستی خۆت دیاری ئەکەیت.
+        </div>
+        <div class="grid-container">
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٢٠،٠٠٠ بینەر بۆ ٥٠،٠٠٠ بینەر', '25,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٢٠،٠٠٠ بینەر بۆ ٥٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">25,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٢٤،٠٠٠ بینەر بۆ ٦٠،٠٠٠ بینەر', '30,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٢٤،٠٠٠ بینەر بۆ ٦٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">30,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٢٨،٠٠٠ بینەر بۆ ٧٠،٠٠٠ بینەر', '35,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٢٨،٠٠٠ بینەر بۆ ٧٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">35,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٣٢،٠٠٠ بینەر بۆ ٨٠،٠٠٠ بینەر', '40,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٣٢،٠٠٠ بینەر بۆ ٨٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">40,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٣٦،٠٠٠ بینەر بۆ ٩٠،٠٠٠ بینەر', '45,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٣٦،٠٠٠ بینەر بۆ ٩٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">45,000 IQD</div>
+            </a>
+            <a href="javascript:void(0)" onclick="openOrderModal('سناپچات', '٤٠،٠٠٠ بینەر بۆ ١٠٠،٠٠٠ بینەر', '50,000 IQD')" class="card">
+                <div class="card-info">
+                    <span class="card-title">٤٠،٠٠٠ بینەر بۆ ١٠٠،٠٠٠ بینەر</span>
+                    <span class="card-sub">دیاریکردنی تەمەن, شار و ڕەگەز بەخواست</span>
+                </div>
+                <div class="card-line"></div>
+                <div class="card-price">50,000 IQD</div>
+            </a>
+        </div>
+        <div class="custom-request-badge" onclick="openCustomOrderModal('سناپچات')">
+            <span>ئەگەر پێویستت بە بڕە پارەیەکی دیاریکراوە بۆ سپۆنسەر لێرە بنووسە</span>
+            <span class="animated-arrow">➔</span>
+        </div>
+        <div class="notice-badge-red">
+            تێبینی: لە سپۆنسەری سناپچات پێویستی بە پاسۆرد و وسێر نەیم سناپچاتەکەت ئەبێت.
+        </div>
+    </div>
+
+    <div id="other-services" class="content-section">
+        <div class="service-card">
+            <svg class="service-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            <div class="service-title">دروستکردنی وێبسایت و ئەپڵیکەیشن</div>
+            <div class="service-desc">دروستکردنی سەکۆ و ماڵپەڕی پێشکەوتوو بۆ گەشەپێدانی فەرمی بازرگانیەکەت.</div>
+        </div>
+        <div class="service-card">
+            <svg class="service-icon" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2z"/></svg>
+            <div class="service-title">دروستکردنی هەمۆ جۆرە سیستەمێک</div>
+            <div class="service-desc">دیزاین و پەرەپێدانی سیستەمی پێشکەوتوو، کاشێر، بەڕێوەبردنی کۆگا و داتابەیس.</div>
+        </div>
+        <div class="service-card">
+            <svg class="service-icon" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
+            <div class="service-title">ڤیدیۆگرافی و مۆنتاژ و ڕیکلامی ڤیدیۆیی</div>
+            <div class="service-desc">بەرهەمهێنانی ڤیدیۆی پڕۆفیشناڵ، مۆنتاژکردن بە بەرزترین کوالێتی و دروستکردنی ڕیکلامی ڤیدیۆیی سەرنجڕاکێش بۆ زیاتر ناساندنی کارەکەت.</div>
+        </div>
+    </div>
+
+    <div id="payment-tab" class="content-section">
+        <div class="payment-box">
+            <div class="payment-title">ڕێگاکانی پارەدان</div>
+            <div class="payment-grid">
+                <a href="https://wa.me/9647510386174?text=سڵاو%20من%20دەمەوێت%20لە%20ڕێگەی%20FIB%20پارە%20بدەم" class="payment-item p-fib">
+                    <div class="payment-item-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm0 4v10h16V8H4zm2 2h4v2H6v-2zm0 4h7v2H6v-2z"/></svg>
+                    </div>
+                    <span>FIB Bank</span>
+                </a>
+                <a href="https://wa.me/9647510386174?text=سڵاو%20من%20دەمەوێت%20لە%20ڕێگەی%20FastPay%20پارە%20بدەم" class="payment-item p-fastpay">
+                    <div class="payment-item-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8z"/></svg>
+                    </div>
+                    <span>FastPay</span>
+                </a>
+                <a href="https://wa.me/9647510386174?text=سڵاو%20من%20دەمەوێت%20لە%20ڕێگەی%20Qi%20Card%20پارە%20بدەم" class="payment-item p-qi">
+                    <div class="payment-item-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 4H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h18c1.11 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H3V6h18v12zM5 8h2v2H5zm0 4h2v2H5zm4-4h10v2H9zm0 4h10v2H9z"/></svg>
+                    </div>
+                    <span>Qi Card</span>
+                </a>
+                <a href="https://wa.me/9647510386174?text=سڵاو%20من%20دەمەوێت%20لە%20ڕێگەی%20NassWallet%20پارە%20بدەم" class="payment-item p-nass">
+                    <div class="payment-item-icon">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11H6v-2h12v2zm0-4H6V8h12v2z"/></svg>
+                    </div>
+                    <span>NassWallet</span>
+                </a>
+            </div>
+            <div class="payment-number-box">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+                <span>0772 958 5559</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback-tab" class="content-section">
+        <div class="feedback-box">
+            <div class="feedback-title">ڕەخنە و پێشنیارەکانتان بنووسن</div>
+            <div class="form-group">
+                <input type="text" id="rev-name" class="form-input" placeholder="ناوی تۆ...">
+            </div>
+            <div class="form-group">
+                <textarea id="rev-text" class="form-textarea" placeholder="ڕەخنە یان پێشنیارەکەت بنووسە..."></textarea>
+            </div>
+            <div class="rating-select" id="star-rating">
+                <span class="star-icon" data-value="1">★</span>
+                <span class="star-icon" data-value="2">★</span>
+                <span class="star-icon" data-value="3">★</span>
+                <span class="star-icon" data-value="4">★</span>
+                <span class="star-icon" data-value="5">★</span>
+            </div>
+            <button class="submit-btn" onclick="addReview()">ناردنی پێشنیار</button>
+
+            <div class="feedback-whatsapp-box">
+                <div class="feedback-whatsapp-text">یاخود دەتوانن ڕاستەوخۆ لە وەتسئەپەوە پەیوەندیمان پێوە بکەن:</div>
+                <a href="https://wa.me/9647510386174" class="btn-feedback-wa" target="_blank">
+                    <svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.817 9.817 0 0 0 12.04 2z"/></svg>
+                    <span>WhatsApp: 0751 038 6174</span>
+                </a>
+            </div>
+
+            <div class="reviews-list" id="reviews-container">
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-name">سازگار ئەحمەد</span>
+                        <span class="review-stars">★★★★★</span>
+                    </div>
+                    <div class="review-text">خزمەتگوزاری سپۆنسەری تیکتۆکتان زۆر نایاب بوو، فرۆشی پەیجەکەمی زۆر زیاد کرد. دەستتان خۆش بێت.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">KURD AGENCY ©️ 2026 | هەموو مافەکان پارێزراوە</div>
+</div>
+
+<script>
+function toggleMenu() {
+    document.getElementById("sidebar").classList.toggle("open");
+    document.getElementById("overlay").classList.toggle("show");
+}
+
+function toggleCollapse(id) {
+    const el = document.getElementById(id);
+    const body = el.querySelector('.menu-content-body');
+    el.classList.toggle('active');
+    if (el.classList.contains('active')) {
+        body.style.maxHeight = body.scrollHeight + "px";
+    } else {
+        body.style.maxHeight = "0";
+    }
+}
+
+function openTab(evt, tabName) {
+    var i, contentSection, tabBtn;
+    contentSection = document.getElementsByClassName("content-section");
+    for (i = 0; i < contentSection.length; i++) { contentSection[i].classList.remove("active"); }
+    tabBtn = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < tabBtn.length; i++) { tabBtn[i].classList.remove("active"); }
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
+}
+
+let selectedRating = 5;
+const stars = document.querySelectorAll('#star-rating .star-icon');
+stars.forEach(star => {
+    star.addEventListener('click', (e) => {
+        selectedRating = parseInt(e.target.getAttribute('data-value'));
+        stars.forEach(s => {
+            if(parseInt(s.getAttribute('data-value')) <= selectedRating) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+    });
+});
+stars.forEach(s => s.classList.add('active'));
+
+function loadReviews() {
+    const container = document.getElementById('reviews-container');
+    const saved = JSON.parse(localStorage.getItem('kurd_agency_reviews')) || [];
+    saved.forEach(rev => {
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        item.innerHTML = `
+            <div class="review-header">
+                <span class="review-name">${rev.name}</span>
+                <span class="review-stars">${'★'.repeat(rev.rating)}${'☆'.repeat(5-rev.rating)}</span>
+            </div>
+            <div class="review-text">${rev.text}</div>
+        `;
+        container.insertBefore(item, container.firstChild);
+    });
+}
+
+function addReview() {
+    const nameInput = document.getElementById('rev-name');
+    const textInput = document.getElementById('rev-text');
+    if(!nameInput.value.trim() || !textInput.value.trim()) {
+        alert('تکایە ناو و پێشنیارەکەت بنووسە.');
+        return;
+    }
+
+    const newReview = {
+        name: nameInput.value.trim(),
+        text: textInput.value.trim(),
+        rating: selectedRating
+    };
+
+    const saved = JSON.parse(localStorage.getItem('kurd_agency_reviews')) || [];
+    saved.push(newReview);
+    localStorage.setItem('kurd_agency_reviews', JSON.stringify(saved));
+
+    const container = document.getElementById('reviews-container');
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    item.innerHTML = `
+        <div class="review-header">
+            <span class="review-name">${newReview.name}</span>
+            <span class="review-stars">${'★'.repeat(newReview.rating)}${'☆'.repeat(5-newReview.rating)}</span>
+        </div>
+        <div class="review-text">${newReview.text}</div>
+    `;
+    container.insertBefore(item, container.firstChild);
+
+    nameInput.value = '';
+    textInput.value = '';
+}
+
+window.onload = loadReviews;
+
+let currentOrder = { platform: '', package: '', price: '' };
+let selectedAges = [];
+
+function toggleAge(btn, ageValue) {
+    if (ageValue === 'هەمووی') {
+        selectedAges = ['هەمووی'];
+        document.querySelectorAll('.age-opt-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    } else {
+        const allIndex = selectedAges.indexOf('هەمووی');
+        if (allIndex > -1) {
+            selectedAges.splice(allIndex, 1);
+            document.querySelectorAll('.age-opt-btn').forEach(b => {
+                if (b.innerText === 'هەمووی') b.classList.remove('active');
+            });
+        }
+        
+        if (selectedAges.includes(ageValue)) {
+            selectedAges = selectedAges.filter(a => a !== ageValue);
+            btn.classList.remove('active');
+        } else {
+            selectedAges.push(ageValue);
+            btn.classList.add('active');
+        }
+    }
+    document.getElementById('order-age').value = selectedAges.join('، ');
+    validateForm();
+}
+
+function updateDaysDropdown(priceValue) {
+    const daysSelect = document.getElementById('order-days');
+    daysSelect.innerHTML = '';
+    
+    let maxDays = 8;
+    let priceNum = parseInt(priceValue.replace(/\D/g, '')) || 10000;
+
+    if (priceNum <= 10000) {
+        maxDays = 2;
+    } else if (priceNum <= 15000) {
+        maxDays = 3;
+    } else if (priceNum <= 20000) {
+        maxDays = 5;
+    } else if (priceNum <= 25000) {
+        maxDays = 6;
+    } else {
+        maxDays = 8;
+    }
+
+    for (let i = 1; i <= maxDays; i++) {
+        let opt = document.createElement('option');
+        opt.value = i + (i === 1 ? ' ڕۆژ' : ' ڕۆژ');
+        opt.innerText = i + (i === 1 ? ' ڕۆژ' : ' ڕۆژ');
+        opt.style.color = '#000';
+        daysSelect.appendChild(opt);
+    }
+}
+
+function openOrderModal(platform, packageName, price) {
+    currentOrder.platform = platform;
+    currentOrder.package = packageName;
+    currentOrder.price = price;
+    
+    document.getElementById('modal-title').innerText = `داواکاری ${platform} (${price})`;
+    
+    // Set dynamic views note text based on platform
+    const viewsNoteEl = document.getElementById('modal-views-note');
+    if (platform.includes('تیکتۆک')) {
+        viewsNoteEl.innerText = "ئەم ڤیوانە کە نوسراون پێشبینی کراون لەلایەن شەریکەی تیکتۆکەوە، هەندێک جار ڤیوەکان زۆر زیاتر ئەبێت لەوەی کە نوسراوە هەندێک جار کەمتر.";
+    } else if (platform.includes('فەیسبووک') || platform.includes('ئینستاگرام')) {
+        viewsNoteEl.innerText = "ئەم ڤیوانە کە نوسراون پێشبینی کراون لەلایەن شەریکەی مێتاوە، هەندێک جار ڤیوەکان زۆر زیاتر ئەبێت لەوەی کە نوسراوە هەندێک جار کەمتر.";
+    } else {
+        viewsNoteEl.innerText = "ئەم ڤیوانە کە نوسراون پێشبینی کراون، هەندێک جار ڤیوەکان زۆر زیاتر ئەبێت لەوەی کە نوسراوە هەندێک جار کەمتر.";
+    }
+
+    const daysGroup = document.getElementById('days-select-group');
+    const modalNote = document.getElementById('modal-note');
+
+    if (platform.includes('تیکتۆک') || platform.includes('سناپچات')) {
+        daysGroup.style.display = 'none';
+        modalNote.style.display = 'none';
+    } else {
+        daysGroup.style.display = 'block';
+        modalNote.style.display = 'block';
+        updateDaysDropdown(price);
+    }
+
+    if (platform.includes('تیکتۆک')) {
+        document.getElementById('cities-group').style.display = 'none';
+        document.getElementById('audience-group').style.display = 'block';
+    } else {
+        document.getElementById('cities-group').style.display = 'block';
+        document.getElementById('audience-group').style.display = 'none';
+    }
+
+    // Reset form fields and validation state
+    document.getElementById('order-page-name').value = '';
+    document.getElementById('order-biz-type').value = '';
+    document.getElementById('order-cities').value = '';
+    document.getElementById('order-audience').value = '';
+    document.getElementById('order-gender').value = '';
+    document.getElementById('order-payment').value = '';
+    document.getElementById('terms-check').checked = false;
+    selectedAges = [];
+    document.getElementById('order-age').value = '';
+    document.querySelectorAll('.age-opt-btn').forEach(b => b.classList.remove('active'));
+
+    validateForm();
+    document.getElementById('order-modal-overlay').classList.add('show');
+}
+
+function openCustomOrderModal(platform) {
+    let minLimit = 10000;
+    if (platform.includes('سناپچات')) {
+        minLimit = 25000;
+    } else if (platform.includes('تیکتۆک بزنس')) {
+        minLimit = 15000;
+    } else if (platform.includes('تیکتۆک شەخسی')) {
+        minLimit = 12000;
+    }
+
+    let customPriceInput = prompt(`تکایە بڕی پارەی دڵخوازت بنووسە (کەمترین بڕی داواکاری ${minLimit.toLocaleString()} دینارە):`);
+    if (!customPriceInput || isNaN(customPriceInput.trim())) return;
+    
+    let priceVal = parseInt(customPriceInput.trim());
+
+    if (priceVal < minLimit) {
+        alert(`کەمترین بڕی داواکاری بۆ ئەم خزمەتگوزارییە ${minLimit.toLocaleString()} دینارە! تکایە بڕێکی گەورەتر بنووسە.`);
+        return;
+    }
+
+    let calculatedViews = "";
+    if (platform.includes('سناپچات')) {
+        let minViews = Math.round((priceVal / 25000) * 20000);
+        let maxViews = Math.round((priceVal / 25000) * 50000);
+        calculatedViews = `${minViews.toLocaleString()} بینەر بۆ ${maxViews.toLocaleString()} بینەر`;
+    } else if (platform.includes('تیکتۆک بزنس')) {
+        let minViews = Math.round((priceVal / 15000) * 15000);
+        let maxViews = Math.round((priceVal / 15000) * 30000);
+        calculatedViews = `${minViews.toLocaleString()} بینەر بۆ ${maxViews.toLocaleString()} بینەر`;
+    } else if (platform.includes('تیکتۆک شەخسی')) {
+        let minViews = Math.round((priceVal / 12000) * 15000);
+        let maxViews = Math.round((priceVal / 12000) * 30000);
+        calculatedViews = `${minViews.toLocaleString()} بینەر بۆ ${maxViews.toLocaleString()} بینەر`;
+    } else {
+        let minViews = Math.round((priceVal / 10000) * 2500);
+        let maxViews = Math.round((priceVal / 10000) * 10000);
+        calculatedViews = `${minViews.toLocaleString()} بینەر بۆ ${maxViews.toLocaleString()} بینەر`;
+    }
+
+    openOrderModal(platform, calculatedViews, priceVal.toLocaleString() + ' IQD');
+}
+
+function closeOrderModal() {
+    document.getElementById('order-modal-overlay').classList.remove('show');
+    selectedAges = [];
+    document.getElementById('order-age').value = '';
+    document.querySelectorAll('.age-opt-btn').forEach(b => b.classList.remove('active'));
+}
+
+function validateForm() {
+    const pageName = document.getElementById('order-page-name').value.trim();
+    const bizType = document.getElementById('order-biz-type').value.trim();
+    const gender = document.getElementById('order-gender').value;
+    const age = document.getElementById('order-age').value;
+    const payment = document.getElementById('order-payment').value;
+    const termsChecked = document.getElementById('terms-check').checked;
+    
+    let days = "بەپێی پاکێج";
+    if (!currentOrder.platform.includes('تیکتۆک') && !currentOrder.platform.includes('سناپچات')) {
+        days = document.getElementById('order-days').value;
+    }
+    
+    let locationData = "";
+    if (currentOrder.platform.includes('تیکتۆک')) {
+        locationData = document.getElementById('order-audience').value;
+    } else {
+        locationData = document.getElementById('order-cities').value.trim();
+    }
+
+    const submitBtn = document.getElementById('submit-order-btn');
+
+    if (pageName && bizType && locationData && gender && age && (currentOrder.platform.includes('تیکتۆک') || currentOrder.platform.includes('سناپچات') || days) && payment && termsChecked) {
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
+    }
+}
+
+function submitOrder() {
+    const pageName = document.getElementById('order-page-name').value.trim();
+    const bizType = document.getElementById('order-biz-type').value.trim();
+    const gender = document.getElementById('order-gender').value;
+    const age = document.getElementById('order-age').value;
+    const payment = document.getElementById('order-payment').value;
+    const termsChecked = document.getElementById('terms-check').checked;
+    
+    let days = "بەپێی پاکێج";
+    if (!currentOrder.platform.includes('تیکتۆک') && !currentOrder.platform.includes('سناپچات')) {
+        days = document.getElementById('order-days').value;
+    }
+    
+    let locationData = "";
+    let locationLabel = "";
+
+    if (currentOrder.platform.includes('تیکتۆک')) {
+        locationData = document.getElementById('order-audience').value;
+        locationLabel = "بینەر";
+    } else {
+        locationData = document.getElementById('order-cities').value.trim();
+        locationLabel = "شارەکان";
+    }
+
+    if(!pageName || !bizType || !locationData || !gender || !age || (!currentOrder.platform.includes('تیکتۆک') && !currentOrder.platform.includes('سناپچات') && !days) || !payment || !termsChecked) {
+        alert('تکایە هەموو زانیارییەکان پڕبکەرەوە و ڕەزامەندی لەسەر مەرجەکان بدە');
+        return;
+    }
+
+    let text = `سڵاو کورد ئەجێنسی، دەمەوێت داواکاریەکی نوێ بکەم:
+پلاتفۆرم: ${currentOrder.platform}
+پاکێج: ${currentOrder.package}
+نرخ: ${currentOrder.price}`;
+
+    if (!currentOrder.platform.includes('تیکتۆک') && !currentOrder.platform.includes('سناپچات')) {
+        text += `\nماوەی سپۆنسەر: ${days}`;
+    }
+
+    text += `\n---------
+ناوی پەیج: ${pageName}
+جۆری کار: ${bizType}
+${locationLabel}: ${locationData}
+ڕەگەز: ${gender}
+تەمەن: ${age}
+شێوازی پارەدان: ${payment}
+ڕەزامەندی مەرجەکان: وەرگیراوە`;
+
+    const url = `https://wa.me/9647510386174?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    closeOrderModal();
+}
+</script>
 </body>
 </html>
