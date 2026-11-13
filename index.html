@@ -89,6 +89,26 @@ body{background:radial-gradient(900px 500px at 90% -10%,rgba(10,150,216,.28),tra
 a.btn{display:inline-block;text-decoration:none;text-align:center}.btn.dis{opacity:.4;pointer-events:none}
 .btn{box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 40%,transparent)}.btn.g{box-shadow:none}
 footer{text-align:center;color:var(--mu);font-size:.78rem;padding:22px 14px 30px;border-top:1px solid var(--bd);max-width:1000px;margin:0 auto}
+
+.gm{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}@media(min-width:640px){.gm{grid-template-columns:repeat(3,1fr)}}
+.gc{background:var(--in);border:1px solid var(--bd);border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;transition:.2s}
+.gc:hover{border-color:var(--ac2);transform:translateY(-2px)}.gc span{font-size:1.8rem}.gc small{color:var(--mu);font-size:.72rem;line-height:1.45}
+.gr5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:340px;margin:12px auto;direction:ltr}.gr5 .cd{font-size:1.1rem;font-weight:800}
+.mq{font-size:2rem;font-weight:900;margin:14px 0;min-height:48px;direction:ltr}.mi{max-width:220px;text-align:center;font-size:1.4rem;margin:0 auto 10px;display:block}
+.sb{padding:16px;font-size:1rem}
+.rx{width:100%;max-width:340px;height:200px;border:0;border-radius:20px;color:#fff;font-size:2.2rem;font-weight:900;background:var(--in);cursor:pointer;margin:10px 0}
+.code{font-size:1.6rem;font-weight:900;letter-spacing:3px;background:var(--in);border:1px dashed var(--ac2);border-radius:12px;padding:10px;text-align:center;direction:ltr;color:var(--ac2)}
+ol.stp{margin:10px 22px;color:var(--mu)}
+textarea{width:100%;background:var(--in);border:1px solid var(--bd);border-radius:10px;padding:11px 12px;outline:none;resize:vertical}
+.stars button{background:none;border:0;font-size:1.9rem;color:var(--bd);cursor:pointer}.stars .on{color:#fbbf24}
+.go{display:grid;gap:6px;max-width:340px;margin:12px auto}.go .cd{aspect-ratio:1}
+.tb{position:relative;height:38px;background:var(--in);border:1px solid var(--bd);border-radius:10px;direction:ltr;margin:20px auto;max-width:420px;overflow:hidden}
+.tz{position:absolute;top:0;bottom:0;background:rgba(34,197,94,.45)}.tk{position:absolute;top:0;bottom:0;width:6px;margin-left:-3px;background:var(--ac2)}
+.vres{border-radius:14px;padding:16px;margin-top:14px;border:2px solid}.vres.ok{border-color:var(--ok);background:rgba(34,197,94,.08)}.vres.no{border-color:var(--no);background:rgba(244,63,94,.08)}.vres ul{margin:6px 22px;color:var(--mu)}
+.navw{position:relative;max-width:1000px;margin:0 auto}
+.na{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:34px;height:34px;border-radius:50%;border:0;background:var(--ac);color:#fff;font-size:1.5rem;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);display:none}
+.na.l{left:6px;animation:nbl .7s ease-in-out infinite alternate}.na.r{right:6px;animation:nbr .7s ease-in-out infinite alternate}
+@keyframes nbl{to{transform:translate(-6px,-50%)}}@keyframes nbr{to{transform:translate(6px,-50%)}}
 </style>
 </head>
 <body>
@@ -98,7 +118,7 @@ footer{text-align:center;color:var(--mu);font-size:.78rem;padding:22px 14px 30px
  <select class="chip" id="lg" onchange="setLang(this.value)"><option value="ku">کوردی</option><option value="en">English</option><option value="ar">العربية</option></select>
  <button class="chip" id="th" onclick="theme()">☀️</button>
 </header>
-<nav id="nv"></nav>
+<div class="navw"><button class="na l" id="nal" onclick="navGo(-1)">‹</button><nav id="nv" onscroll="navArrows()"></nav><button class="na r" id="nar" onclick="navGo(1)">›</button></div>
 <main id="app"></main>
 <footer>KURD AGENCY © 2018 · <span id="ft"></span></footer>
 <script>
@@ -107,10 +127,13 @@ const $=id=>document.getElementById(id),WA='9647510386174',fmt=n=>Math.round(n).
 const PAYN={FIB:'',FASTPAY:'',QCARD:'',ASIAPAY:''}; // ژمارەی پارەدان لێرە بنووسە
 const DAILY=100; // زۆرترین پۆینت لە ڕۆژێکدا
 const REW=[[1000,10000],[1500,15000],[2000,20000]];
+const myCode=localStorage.kc||(localStorage.kc='KA'+Math.random().toString(36).slice(2,7).toUpperCase());
+try{const r=new URLSearchParams(location.search).get('ref');if(r&&r!=myCode)localStorage.kri=r.replace(/[^A-Za-z0-9]/g,'').slice(0,12)}catch(e){}
+const refIn=()=>localStorage.kri||'';
 let lang=localStorage.kl||'ku',V='c',pts=+localStorage.kp||0,S;
 const LI={ku:0,en:1,ar:2};
 const T={
-nc:['دروستکردنی کەمپەین','Create Campaign','إنشاء حملة'],ng:['یاری و پۆینت','Games & Points','ألعاب ونقاط'],ns:['خزمەتگوزاری','Services','الخدمات'],ni:['زانیاری','Info','معلومات'],np:['ڕێگاکانی پارەدان','Payment Methods','طرق الدفع'],
+nc:['دروستکردنی کەمپەین','Create Campaign','إنشاء حملة'],ng:['یاری بکە و ببەرەوە','Play & Win','العب واربح'],ns:['خزمەتگوزاریەکانی تر','Other Services','خدمات أخرى'],ni:['زانیاری','Info','معلومات'],np:['ڕێگاکانی پارەدان','Payment Methods','طرق الدفع'],
 hero:['ڕیکلامی سۆشیاڵ میدیا بە شێوازێکی پڕۆفیشناڵ','Professional social media advertising','إعلانات احترافية للسوشيال ميديا'],heroS:['پلاتفۆرمەکەت هەڵبژێرە، بودجە دیاری بکە و کەمپەینەکەت لە چەند هەنگاوێکدا بنێرە.','Pick a platform, set a budget and send your campaign in a few steps.','اختر المنصة وحدد الميزانية وأرسل حملتك بخطوات بسيطة.'],
 s1:['پلاتفۆرم','Platform','المنصة'],s2:['بودجە','Budget','الميزانية'],s3:['ئۆدیێنس و ئاد','Audience & Ad','الجمهور والإعلان'],s4:['پیاچوونەوە','Review','المراجعة'],
 p_fb:['سپۆنسەری فەیسبووک','Facebook Ads','إعلانات فيسبوك'],p_ig:['سپۆنسەری ئینستاگرام','Instagram Ads','إعلانات إنستغرام'],p_sc:['سپۆنسەری سناپچات','Snapchat Ads','إعلانات سناب شات'],p_tb:['تیکتۆک (بزنس)','TikTok (Business)','تيك توك (بزنس)'],p_tp:['تیکتۆک (شەخسی)','TikTok (Personal)','تيك توك (شخصي)'],p_tl:['لایکی تیکتۆک','TikTok Likes','لايكات تيك توك'],
@@ -154,23 +177,43 @@ fq:['پرسیارە باوەکان','FAQ','الأسئلة الشائعة'],
 q1:['ئایا سپۆنسەر فۆڵۆو زیاد دەکات؟','Does sponsoring increase followers?','هل الرعاية تزيد المتابعين؟'],a1:['نەخێر، خەڵک سپۆنسەر وەکو بازاڕێکی ئۆنلاین بەکاردەهێنێت نەک بۆ فۆڵۆو کردنی پەیج.','No. People use ads like an online marketplace, not to follow pages.','لا، الناس تستخدم الإعلانات كسوق إلكتروني وليس لمتابعة الصفحات.'],
 q2:['ئایا فرۆش گەرەنتی دەکرێت؟','Are sales guaranteed?','هل المبيعات مضمونة؟'],a2:['نەخێر، کڕیار خۆی بڕیار دەدات. شێوازی ڤیدیۆ، پێشکەشکردن و کوالیتی کاڵاکەش کاریگەرییان هەیە.','No. The buyer decides; video style, presentation and product quality matter too.','لا، المشتري هو من يقرر، وأسلوب الفيديو والعرض وجودة المنتج مؤثرة أيضا.'],
 home:['گەڕانەوە بۆ سەرەتا','Back to start','العودة للبداية'],or:['یان','or','أو'],oth:['نرخێکی تر دەتەوێت؟','Need a different amount?','تريد مبلغا آخر؟'],othD:['ئەگەر نرخەکەت لە لیستەکەدا نییە، لێرە بڕی دڵخوازت بنووسە و بینەری پێشبینیکراو ببینە.','If your amount is not in the list, enter it here to see the estimated results.','إذا لم يكن المبلغ في القائمة، أدخله هنا لرؤية النتائج المقدرة.'],cin:['بڕی پارە بە دینار (کەمترین {m})','Amount in IQD (min {m})','المبلغ بالدينار (الحد الأدنى {m})'],mn:['کەمترین بڕ {m} دینارە','Minimum is {m} IQD','الحد الأدنى {m} دينار'],ctS:['شارەکان','Cities','المدن'],agS:['تەمەن','Age','العمر'],cmS:['پەیوەندی لە ڕێگەی','Contact via','التواصل عبر'],foot:['هەموو مافەکان پارێزراوە بۆ کورد ئەجێنسی ٢٠١٨','All rights reserved to Kurd Agency 2018','جميع الحقوق محفوظة لوكالة كورد 2018'],
+g4:['ژمارە و کات','Math Rush','سباق الحساب'],g4d:['٧ چرکە بۆ هەر پرسیارێک، ٣ ژیان، ٦٠ چرکە. لانی کەم ١٢ وەڵامی ڕاست','7s per question, 3 lives, 60s. Get 12+ right','7 ثوان لكل سؤال، 3 أرواح، 60 ثانية. 12 إجابة صحيحة على الأقل'],
+g5:['ڕیزکردنی ژمارە','Number Order','ترتيب الأرقام'],g5d:['١ تا ٢٥ بە ڕیز لە ٢٥ چرکەدا، هەڵە = +٢ چرکە','1 to 25 in order within 25s, mistake = +2s','من 1 إلى 25 بالترتيب خلال 25 ثانية، الخطأ = +2 ثانية'],
+g6:['ڕەنگی ڕاستەقینە','True Color','اللون الحقيقي'],g6d:['ڕەنگی نووسینەکە دیاری بکە نەک وشەکە. ٣٠ چرکە، ٣ ژیان، لانی کەم ١٥','Pick the ink color, not the word. 30s, 3 lives, 15+','اختر لون الخط لا الكلمة. 30 ثانية، 3 أرواح، 15 على الأقل'],
+g7:['خێرایی ڕەفلێکس','Reflex Test','اختبار رد الفعل'],g7d:['٥ جار کاتێک سەوز بوو لێبدە. مامناوەندی کەمتر لە ٢٩٠ms. لێدانی زوو = دۆڕان','Tap on green 5 times. Average under 290ms. Early tap = fail','اضغط عند الأخضر 5 مرات. المتوسط أقل من 290ms. الضغط المبكر = خسارة'],
+nr:['هاوڕێت بانگێشت بکە و ببەرەوە','Invite & Win','ادع واربح'],rf1:['٥ هاوڕێ بانگێشت بکە، هەدیەیەکی سپۆنسەر وەربگرە','Invite 5 friends, get a free sponsorship gift','ادع 5 أصدقاء واحصل على إعلان هدية'],
+rfd:['هاوڕێکانت لە ڕێگەی لینکەکەتەوە بێن و لای ئێمە سپۆنسەر بکەن. کاتێک ٥ هاوڕێت سپۆنسەریان کرد، تیمەکەمان سپۆنسەرێکی هەدیەت بۆ دەکات.','Friends open your link and order a sponsorship. When 5 friends have ordered, our team gives you a free sponsorship gift.','يفتح أصدقاؤك رابطك ويطلبون إعلانا. عندما يطلب 5 أصدقاء يمنحك فريقنا إعلانا هدية.'],
+rs1:['لینکەکەت بۆ هاوڕێکانت بنێرە','Send your link to friends','أرسل رابطك لأصدقائك'],rs2:['هاوڕێکانت لە ڕێگەی لینکەکەوە سپۆنسەر دەکەن','They order a sponsorship through it','يطلبون إعلانا عبره'],rs3:['دوای ٥ هاوڕێ، هەدیەکەت داوا بکە','After 5 friends, claim your gift','بعد 5 أصدقاء اطلب هديتك'],
+rfc:['کۆدی تۆ','Your code','رمزك'],rfl:['لینکی بانگێشت','Invite link','رابط الدعوة'],cp:['کۆپی لینک','Copy link','نسخ الرابط'],cpd:['کۆپی کرا ✓','Copied ✓','تم النسخ ✓'],shr:['ناردن بۆ هاوڕێ لە وەتسئەپ','Share on WhatsApp','مشاركة عبر واتساب'],rfClaim:['داواکردنی هەدیە','Claim gift','طلب الهدية'],
+rfn:['هەر هاوڕێیەک پێویستە لە ڕێگەی لینکەکەتەوە بێت و داواکارییەکەی بنێرێت. تیمەکەمان ژمارەی هاوڕێکانت لە ڕێگەی کۆدەکەوە پشتڕاست دەکاتەوە.','Each friend must come through your link and send an order. Our team verifies the count using your code.','يجب أن يأتي كل صديق عبر رابطك ويرسل طلبا. سيتحقق فريقنا من العدد عبر رمزك.'],rfk:['کۆدی بانگێشت','Invite code','رمز الدعوة'],
+nvd:['تێستی ڤیدیۆ','Video Check','فحص الفيديو'],nf:['ڕەخنە و پێشنیار','Feedback','الآراء والمقترحات'],
+vcT:['تێستی ڤیدیۆی ڕیکلام','Ad Video Check','فحص فيديو الإعلان'],vcD:['ڤیدیۆکەت هەڵبژێرە تا بزانین بۆ سپۆنسەر دەشێت یان نا. تەنیا وێنەکانی ڤیدیۆکە شیدەکرێنەوە (دەنگ نا) و ئەمە گەرەنتی قبوڵبوونی پلاتفۆرمەکە نییە.','Pick your video to see if it can be sponsored. Only the visuals are analyzed (not audio) and this is not a guarantee of platform approval.','اختر الفيديو لنرى إن كان صالحا للرعاية. تُحلل الصور فقط (بدون الصوت) وهذا ليس ضمانا لقبول المنصة.'],
+vcGo:['تێست بکە','Check video','افحص الفيديو'],vcBusy:['خەریکی پشکنینم...','Checking...','جار الفحص...'],vcGreat:['زۆر باشە ✅','Very good ✅','ممتاز ✅'],vcOk:['باشە 👍','Good 👍','جيد 👍'],vcNo:['سپۆنسەر ناکرێت ⛔','Cannot be sponsored ⛔','لا يمكن رعايته ⛔'],vcWhy:['هۆکارەکان','Reasons','الأسباب'],vcTip:['ڕاوێژ','Tips','نصائح'],vcOrder:['دروستکردنی کەمپەین','Create a campaign','إنشاء حملة'],
+vcErr:['پشکنین نەکرا. دڵنیابە API لەسەر سێرڤەر چالاکە و دووبارە هەوڵبدەرەوە.','Check failed. Make sure the server API is set up and try again.','فشل الفحص. تأكد من تفعيل الـ API على الخادم وحاول مجددا.'],
+q3:['ئایا لە تیکتۆک دەتوانم شارەکان دیاری بکەم؟','Can I choose cities on TikTok?','هل يمكن تحديد المدن في تيك توك؟'],a3:['لە تیکتۆک ناتوانرێت شارەکان سەد لە سەد دیاری بکرێت، بەڵام دەتوانین بینەران بکەین کورد یان عەرەب یان هەردووکیان.','Exact cities cannot be guaranteed on TikTok, but we can target Kurdish, Arab or both.','لا يمكن تحديد المدن بدقة في تيك توك، لكن يمكن استهداف الكرد أو العرب أو كليهما.'],
+q4:['سپۆنسەرەکە چەند دوای داواکاری دەست پێدەکات؟','How soon does the ad start?','متى يبدأ الإعلان؟'],a4:['تیکتۆک ١ بۆ ٢ کاژمێر، مێتا (فەیسبووک و ئینستاگرام) ٣ بۆ ٤ کاژمێر.','TikTok 1-2 hours; Meta (Facebook & Instagram) 3-4 hours.','تيك توك 1-2 ساعة؛ ميتا (فيسبوك وإنستغرام) 3-4 ساعات.'],
+fqn:['تێبینی: تەنیا سپۆنسەر کردن مەرج نییە بۆ زیادکردنی فرۆش؛ شێوازی ڤیدیۆکەت، شێوازی خستنەڕووی کاڵاکەت و کوالێتی کاڵاکەت کاریگەرییان هەیە.','Note: sponsoring alone is not enough; video style, product presentation and quality matter.','ملاحظة: الرعاية وحدها لا تكفي؛ أسلوب الفيديو وعرض المنتج وجودته مؤثرة.'],
+fn:['ناوت','Your name','اسمك'],fr:['نرخاندن','Rating','التقييم'],ft2:['ڕەخنە یان پێشنیارەکەت','Your feedback','رأيك أو اقتراحك'],fs:['ناردن بۆ وەتسئەپ','Send via WhatsApp','إرسال عبر واتساب'],fy:['ڕەخنەکانی تۆ','Your feedback history','ملاحظاتك السابقة'],
+g8:['یادگەی ژمارە','Digit Memory','ذاكرة الأرقام'],g8d:['ژمارەکە لە بیر بکە و بینووسەرەوە، هەر جار درێژتر دەبێت. پۆینت لە ٨ ژمارەوە','Memorize the number and type it back, it grows each round. Points from 8 digits','احفظ الرقم واكتبه، يطول كل جولة. النقاط من 8 أرقام'],
+g9:['ڕەنگی جیاواز','Odd Color','اللون المختلف'],g9d:['چوارگۆشەی کەمێک جیاواز بدۆزەرەوە. ٣٠ چرکە، ٣ ژیان، لانی کەم ١٢','Find the slightly different square. 30s, 3 lives, 12+','اعثر على المربع المختلف قليلا. 30 ثانية، 3 أرواح، 12+'],
+g10:['وەستاندنی تەواو','Perfect Stop','التوقيت المثالي'],g10d:['نیشانەکە لە ناو ناوچە سەوزەکە بوەستێنە، خێراتر و بچووکتر دەبێت. ٣ ژیان، لانی کەم ٨','Stop the marker in the green zone; it gets faster and smaller. 3 lives, 8+','أوقف المؤشر في المنطقة الخضراء؛ يزداد سرعة وصغرا. 3 أرواح، 8+'],
 cv:['ناردنی CV بۆ کارکردن','Send CV for a job','إرسال السيرة الذاتية']
 };
 const t=k=>(T[k]||[k,k,k])[LI[lang]];
 const SV={fb:'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
 ig:'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z',
-sc:'M12.001 2c-3.16 0-5.4 2.16-5.83 4.88-.12.78-.06 1.8.27 2.65.1.26.1.53.02.77-.1.32-.42.55-.8.55-.38 0-.74-.15-1.04-.42-.31-.29-.68-.42-1.07-.42-.85 0-1.55.62-1.55 1.38 0 .46.25.88.67 1.15.65.42 1.14.88 1.14 1.37 0 .28-.11.53-.32.73-.55.51-1.34 1.05-2.07 1.41-.33.16-.48.5-.37.83.11.34.45.55.83.55.32 0 1.09-.32 1.84-.71.5-.26.96-.51 1.3-.64.33-.13.68.04.83.37.52 1.15 1.83 2.74 4.19 2.74s3.67-1.59 4.19-2.74c.15-.33.5-.5.83-.37.34.13.8.38 1.3.64.75.39 1.52.71 1.84.71.38 0 .72-.21.83-.55.11-.33-.04-.67-.37-.83-.73-.36-1.52-.9-2.07-1.41-.21-.2-.32-.45-.32-.73 0-.49.49-.95 1.14-1.37.42-.27.67-.69.67-1.15 0-.76-.7-1.38-1.55-1.38-.39 0-.76.13-1.07.42-.3.27-.66.42-1.04.42-.38 0-.7.23-.8-.55-.08-.24-.08-.51.02-.77.33-.85.39-1.87.27-2.65C17.401 4.16 15.161 2 12.001 2z',
+sc:'M12 2.5c-2.8 0-4.6 2.1-4.6 4.9v1.8c-.5.1-1 0-1.4-.3-.3-.2-.7 0-.7.4 0 .6.8 1 1.6 1.3-.3 1-1.2 2.2-2.8 2.7-.4.1-.5.6-.1.8.7.4 1.4.6 2 .7.1.4.2.7.4.9.3.3.9.1 1.5.1.9 0 1.6 1.7 4.1 1.7s3.2-1.7 4.1-1.7c.6 0 1.2.2 1.5-.1.2-.2.3-.5.4-.9.6-.1 1.3-.3 2-.7.4-.2.3-.7-.1-.8-1.6-.5-2.5-1.7-2.8-2.7.8-.3 1.6-.7 1.6-1.3 0-.4-.4-.6-.7-.4-.4.3-.9.4-1.4.3V7.4c0-2.8-1.8-4.9-4.6-4.9z',
 tt:'M19.59 6.69a4.836 4.836 0 0 1-3.23-1.22 4.851 4.851 0 0 1-1.22-3.23h-3.82v12.03a3.197 3.197 0 0 1-3.19 3.19 3.197 3.197 0 0 1-3.19-3.19 3.197 3.197 0 0 1 3.19-3.19c.29 0 .58.03.86.08V7.52a8.03 8.03 0 0 0-8.86 8c0 4.42 3.58 8 8 8s8-3.58 8-8V11.4c1.39 1 3.1 1.6 4.95 1.6v-3.82a4.843 4.843 0 0 1-3.4-2.49z',
 ht:'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'};
 const D={
 fb:{bg:'#1877f2',fg:'#fff',g:'fb',m:10000,u:'v',k:'فەیسبووک',f:'pg lk bz ct gd ag dy',r:[[10000,2500,8000],[15000,3750,13000],[20000,5000,17000],[25000,6250,22000],[30000,7500,27000]]},
 ig:{bg:'linear-gradient(45deg,#f09433,#dc2743 50%,#bc1888)',fg:'#fff',g:'ig',m:10000,u:'v',k:'ئینستاگرام',f:'pg lk bz ct gd ag dy',r:[[10000,2500,8000],[15000,3750,13000],[20000,5000,17000],[25000,6250,22000],[30000,7500,27000]]},
-sc:{bg:'#fffc00',fg:'#000',g:'sc',m:25000,u:'v',k:'سناپچات',f:'pg bz ct gd ag',r:[[25000,20000,50000],[30000,24000,60000],[35000,28000,70000],[40000,32000,80000],[45000,36000,90000],[50000,40000,100000]]},
+sc:{bg:'#fffc00',fg:'#fff',g:'sc',m:25000,u:'v',k:'سناپچات',f:'pg bz ct gd ag',r:[[25000,20000,50000],[30000,24000,60000],[35000,28000,70000],[40000,32000,80000],[45000,36000,90000],[50000,40000,100000]]},
 tb:{bg:'#000;box-shadow:-2px -2px 0 #00f2fe,2px 2px 0 #fe0979',fg:'#fff',g:'tt',m:15000,u:'v',k:'تیکتۆک بزنس',f:'pg bz au gd ag cm',r:[[15000,15000,30000],[25000,30000,40000],[35000,40000,60000],[45000,60000,90000],[55000,90000,110000],[65000,110000,160000]]},
 tp:{bg:'#000;box-shadow:-2px -2px 0 #00f2fe,2px 2px 0 #fe0979',fg:'#fff',g:'tt',m:12000,u:'v',k:'تیکتۆک شەخسی',f:'pg bz au gd ag',r:[[12000,15000,30000],[17000,30000,50000],[20000,50000,80000],[25000,80000,130000],[45000,130000,250000]]},
 tl:{bg:'linear-gradient(45deg,#fe0979,#00c2d1)',fg:'#fff',g:'ht',m:2500,u:'l',k:'زیادکردنی لایکی تیکتۆک',f:'pg lk',d:[1,2,3,4,6],r:[[2500,650,2000],[5000,1250,4000],[7000,1800,6000],[9000,2200,8000],[13000,3600,12000]]}
 };
-const ico=k=>`<i class="lg" style="background:${D[k].bg}"><svg viewBox="0 0 24 24" fill="${D[k].fg}"><path d="${SV[D[k].g]}"/></svg></i>`;
+const ico=k=>`<i class="lg" style="background:${D[k].bg}"><svg viewBox="0 0 24 24" fill="${D[k].fg}"${k=='sc'?' stroke="#000" stroke-width="1.3" stroke-linejoin="round"':''}><path d="${SV[D[k].g]}"/></svg></i>`;
 function est(x,P){const p=D[P].r;let a;
  if(x<=p[0][0]){a=[x*p[0][1]/p[0][0],x*p[0][2]/p[0][0]]}
  else{const n=p.length,e=p[n-1];if(x>=e[0]){const q=p[n-2],d=x-e[0],w=e[0]-q[0];a=[e[1]+d*(e[1]-q[1])/w,e[2]+d*(e[2]-q[2])/w]}
@@ -190,11 +233,15 @@ function go(v){stop();V=v;render()}
 function render(){
  const d=document.documentElement;d.lang=lang;d.dir=lang=='en'?'ltr':'rtl';$('lg').value=lang;
  $('pt').textContent='⭐ '+pts;
- $('ft').textContent=t('foot');$('nv').innerHTML=[['c','nc'],['s','ns'],['p','np'],['i','ni'],['g','ng']].map(a=>`<button class="${V==a[0]?'on':''}" onclick="go('${a[0]}')">${t(a[1])}</button>`).join('');
- $('app').innerHTML={c:camp,g:games,s:srv,i:info,p:payTab}[V]();
- if(V=='c'){sum();updSend()}
- window.scrollTo(0,0)}
+ $('ft').textContent=t('foot');$('nv').innerHTML=[['c','nc'],['v','nvd'],['s','ns'],['r','nr'],['g','ng'],['q','fq'],['f','nf'],['i','ni'],['p','np']].map(a=>`<button class="${V==a[0]?'on':''}" onclick="go('${a[0]}')">${t(a[1])}</button>`).join('');
+ $('app').innerHTML={c:camp,g:games,s:srv,i:info,p:payTab,r:refer,v:vcheck,f:feedback,q:faq}[V]();
+ if(V=='c'){sum();updSend()}if(V=='f')setStar(fbStar);
+ window.scrollTo(0,0);setTimeout(navArrows,60)}
 
+function navGo(d){$('nv').scrollBy({left:d*220,behavior:'smooth'})}
+function navArrows(){const n=$('nv'),mx=n.scrollWidth-n.clientWidth,p=Math.abs(n.scrollLeft),rtl=document.documentElement.dir=='rtl',a=p>2,b=p<mx-2;
+ $('nal').style.display=(rtl?b:a)?'block':'none';$('nar').style.display=(rtl?a:b)?'block':'none'}
+window.addEventListener('resize',navArrows);
 /* ---------- Campaign ---------- */
 const GL={fb:'#1877f2',ig:'#e1306c',sc:'#fffc00',tb:'#00f2fe',tp:'#fe0979',tl:'#a855f7'};
 const tv=v=>{for(const k of ['kurd','arab','both','all2','male','female','wa','igc','ph','allA'])if(T[k][0]==v)return t(k);return v};
@@ -247,12 +294,13 @@ function rows(){const f=S.f,h=D[S.p].f.split(' ');
  if(h.includes('ag'))L.push([t('agS'),f.ag.map(tv).join('، ')]);
  if(h.includes('dy'))L.push([t('dy'),(f.dy||1)+' '+t('dd')]);
  if(h.includes('cm'))L.push([t('cmS'),tv(f.cm)+' ('+esc(f.cd)+')']);
+ if(refIn())L.push([t('rfk'),esc(refIn())]);
  return L}
 function st4(){
  return `<h2>${t('s4')}</h2><div class="rvb">${rows().map(r=>`<div class="rv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
  <div class="fg" style="margin-top:16px"><label>${t('pay')}</label><select onchange="S.pay=this.value;chk()"><option value="" disabled ${S.pay?'':'selected'}>—</option>${Object.keys(PAYN).map(x=>`<option ${S.pay==x?'selected':''}>${x}</option>`).join('')}</select></div>
  <label class="ck"><input type="checkbox" ${S.ok?'checked':''} onchange="S.ok=this.checked;chk()"> ${t('ag2')}</label>${notes()}
- <div class="row"><button class="btn g" onclick="S.st=1;render()">⟲ ${t('home')}</button><a id="sd" class="btn dis" target="_blank" rel="noopener" onclick="sent(event)">${t('send')}</a></div>`}
+ <div class="row"><button class="btn g" onclick="S.st=1;render()">⟲ ${t('home')}</button><button id="sd" class="btn" onclick="sent()" disabled>${t('send')}</button></div>`}
 function sum(){const el=$('sm');if(!el||!S.p)return;const ok=okPr();
  el.innerHTML=`<div class="sm">${ico(S.p)}<span>${t('p_'+S.p)}</span></div><dl><dt>${t('pr')}</dt><dd><span>${ok?fmt(S.pr)+' IQD':'—'}</span></dd>${S.f.dy&&D[S.p].f.includes('dy')?`<dt>${t('dy')}</dt><dd>${S.f.dy} ${t('dd')}</dd>`:''}</dl><div class="est">${t('es')}<b>${ok?estH(S.p,S.pr):'—'}</b></div>`}
 function msg(){const d=D[S.p],f=S.f;
@@ -263,16 +311,17 @@ function msg(){const d=D[S.p],f=S.f;
   if(f.cm)m+=`\nپەیوەندی کڕیار لە ڕێگەی: ${f.cm} (${f.cd})`;
   m+=f.au?`\nبینەر: ${f.au}`:`\nشارەکان: ${f.ct}`;
   m+=`\nڕەگەز: ${f.gd}\nتەمەن: ${f.ag.join('، ')}`}
- return m+`\nشێوازی پارەدان: ${S.pay}\nڕەزامەندی مەرجەکان: وەرگیراوە`}
+ return m+`\nشێوازی پارەدان: ${S.pay}\nڕەزامەندی مەرجەکان: وەرگیراوە`+(refIn()?`\nکۆدی بانگێشت: ${refIn()}`:'')}
 const waUrl=m=>`https://wa.me/${WA}?text=${encodeURIComponent(m)}`;
-function updSend(){const a=$('sd');if(!a)return;const ok=S.pay&&S.ok;a.classList.toggle('dis',!ok);if(ok)a.href=waUrl(msg());else a.removeAttribute('href')}
-function sent(e){const a=$('sd');if(a.classList.contains('dis')){e.preventDefault();return}try{ttq.track('PlaceAnOrder')}catch(x){}setTimeout(()=>{reset();render()},600)}
+function updSend(){const a=$('sd');if(a)a.disabled=!(S.pay&&S.ok)}
+function openWA(m){const u=waUrl(m),w=window.open(u,'_blank');if(!w)location.href=u}
+function sent(){if(!(S.pay&&S.ok))return;try{ttq.track('PlaceAnOrder')}catch(x){}openWA(msg());reset();render()}
 
 /* ---------- Games ---------- */
 function games(){const rw=REW.map(r=>`<div class="rc"><b>${t('sp').replace('{n}',fmt(r[1]))}</b><small>${fmt(r[0])} ${t('pn')}</small><div class="bar"><i style="width:${Math.min(100,pts/r[0]*100)}%"></i></div><button class="btn" ${pts>=r[0]?'':'disabled'} onclick="redeem(${r[0]},${r[1]})">${t('rq')}</button></div>`).join('');
  return `<div class="box"><h2>${t('gt')}</h2><div class="big">⭐ ${fmt(pts)}</div><p style="color:var(--mu);font-size:.85rem">${t('rwd')}</p><div class="rw">${rw}</div>
- <div class="row s"><button class="btn" onclick="memory()">🧠 ${t('gm')}</button><button class="btn" onclick="aim()">🎯 ${t('ga')}</button><button class="btn" onclick="simon()">🎹 ${t('gq')}</button></div><div class="nt">${t('gnote')}</div></div>
- <div class="box" style="margin-top:14px;text-align:center"><div id="gs" style="font-weight:800"></div><div id="ga"></div><div id="gr" style="font-weight:800;margin-top:8px"></div></div>`}
+ <div class="gm">${G.map(g=>`<button class="gc" onclick="play('${g[3]}')"><span>${g[0]}</span><b>${t(g[1])}</b><small>${t(g[2])}</small></button>`).join('')}</div><div class="nt">${t('gnote')}</div></div>
+ <div class="box" id="stg" style="margin-top:14px;text-align:center"><div id="gs" style="font-weight:800"></div><div id="ga"></div><div id="gr" style="font-weight:800;margin-top:8px"></div></div>`}
 function stop(){clearInterval(window.tmr);clearTimeout(window.w)}
 function addPts(p){const d=new Date().toDateString();if(localStorage.kd!=d){localStorage.kd=d;localStorage.kg=0}
  const a=Math.max(0,Math.min(p,DAILY-(+localStorage.kg||0)));localStorage.kg=(+localStorage.kg||0)+a;pts+=a;localStorage.kp=pts;$('pt').textContent='⭐ '+pts;return a}
@@ -311,6 +360,102 @@ function simon(){stop();$('gr').textContent='';
   i++;if(i==seq.length){busy=1;setTimeout(nx,500)}});
  nx()}
 
+
+const G=[['🧠','gm','gmd','memory'],['🎯','ga','gad','aim'],['🎹','gq','gqd','simon'],['➗','g4','g4d','mathrush'],['🔢','g5','g5d','numord'],['🎨','g6','g6d','stroop'],['⚡','g7','g7d','reflex'],['👁️','g8','g8d','digits'],['🌈','g9','g9d','oddone'],['⏱️','g10','g10d','timing']];
+function play(f){window[f]();$('stg').scrollIntoView({behavior:'smooth',block:'center'})}
+function mathrush(){stop();$('gr').textContent='';let ok=0,lv=3,fin=0,ans=0,tq=0;const T0=Date.now();
+ $('ga').innerHTML='<div class="mq" id="mq"></div><input type="number" inputmode="numeric" id="ma" class="mi"><div class="bar"><i id="mb" style="width:100%"></i></div>';
+ const up=tm=>$('gs').textContent=`${t('g4d')} | ⏱ ${tm} · ❤ ${lv} · ✔ ${ok}`;
+ const end=()=>{if(fin)return;fin=1;done(ok>=12?Math.floor(ok/3):0)};
+ const q=()=>{const a=12+Math.random()*78|0,b=3+Math.random()*7|0,c=10+Math.random()*20|0,p=Math.random()<.5;ans=p?a*b+c:a*b-c;$('mq').textContent=`${a} × ${b} ${p?'+':'−'} ${c}`;$('ma').value='';$('ma').focus();tq=Date.now()};
+ const miss=()=>{lv--;if(lv<=0)return end();q()};
+ $('ma').oninput=()=>{if($('ma').value!==''&&+$('ma').value===ans){ok++;q()}};
+ $('ma').onkeydown=e=>{if(e.key=='Enter'&&$('ma').value!==''&&+$('ma').value!==ans)miss()};
+ q();window.tmr=setInterval(()=>{if(fin)return;const e=(Date.now()-tq)/7000,tm=60-Math.floor((Date.now()-T0)/1000);$('mb').style.width=Math.max(0,100-e*100)+'%';up(tm);if(tm<=0)return end();if(e>=1)miss()},100)}
+function numord(){stop();$('gr').textContent='';let n=1,pen=0,fin=0;const t0=Date.now(),nums=[...Array(25).keys()].map(i=>i+1).sort(()=>Math.random()-.5);
+ $('ga').innerHTML=`<div class="gr5">${nums.map(x=>`<button class="cd" data-n="${x}">${x}</button>`).join('')}</div>`;
+ const up=()=>{const e=(Date.now()-t0)/1000+pen;$('gs').textContent=`${t('g5d')} | ⏱ ${e.toFixed(1)} · → ${n}`;return e};
+ window.tmr=setInterval(()=>{if(up()>=25&&!fin){fin=1;done(0)}},100);
+ document.querySelectorAll('.cd').forEach(b=>b.onclick=()=>{if(fin||b.classList.contains('on'))return;
+  if(+b.dataset.n==n){b.classList.add('on');n++;if(n>25){fin=1;const e=up();done(e<=25?4+Math.floor((25-e)/2):0)}}else pen+=2})}
+function stroop(){stop();$('gr').textContent='';
+ const N={ku:['سوور','سەوز','شین','زەرد'],en:['Red','Green','Blue','Yellow'],ar:['أحمر','أخضر','أزرق','أصفر']}[lang],C=['#ef4444','#22c55e','#3b82f6','#eab308'];
+ let ok=0,lv=3,tm=30,fin=0,ink=0;
+ $('ga').innerHTML=`<div class="mq" id="sw"></div><div class="gr2">${N.map((n,k)=>`<button class="btn g sb" data-k="${k}">${n}</button>`).join('')}</div>`;
+ const up=()=>$('gs').textContent=`${t('g6d')} | ⏱ ${tm} · ❤ ${lv} · ✔ ${ok}`;
+ const end=()=>{if(fin)return;fin=1;done(ok>=15?Math.floor(ok/4):0)};
+ const nw=()=>{const w=Math.random()*4|0;ink=(w+1+(Math.random()*3|0))%4;$('sw').textContent=N[w];$('sw').style.color=C[ink]};
+ document.querySelectorAll('.sb').forEach(b=>b.onclick=()=>{if(fin)return;if(+b.dataset.k==ink)ok++;else{lv--;if(lv<=0){up();return end()}}up();nw()});
+ nw();up();window.tmr=setInterval(()=>{tm--;up();if(tm<=0)end()},1000)}
+function reflex(){stop();$('gr').textContent='';let r=0,tot=0,st0=0,ready=0,lock=1,fin=0;
+ $('ga').innerHTML='<button class="rx" id="rx"></button>';const b=$('rx');
+ const up=()=>$('gs').textContent=`${t('g7d')} | ${r}/5`;
+ const nr=()=>{lock=0;ready=0;b.style.background='#ef4444';b.textContent='…';window.w=setTimeout(()=>{b.style.background='#22c55e';b.textContent='!';ready=1;st0=performance.now()},1200+Math.random()*2800)};
+ b.onclick=()=>{if(fin||lock)return;if(!ready){fin=1;stop();b.style.background='var(--no)';return done(0)}
+  const e=performance.now()-st0;tot+=e;r++;ready=0;lock=1;b.style.background='var(--in)';b.textContent=Math.round(e)+' ms';up();
+  if(r==5){fin=1;const a=tot/5;done(a<=260?12:a<=290?6:0);$('gs').textContent+=` · Ø ${Math.round(a)} ms`}else window.w=setTimeout(nr,1000)};
+ up();nr()}
+function refer(){const link=location.href.split('?')[0].split('#')[0]+'?ref='+myCode,w=m=>`https://wa.me/${m}`;
+ const sh=`https://wa.me/?text=${encodeURIComponent('هاوڕێ، سپۆنسەرەکانت لای کورد ئەجێنسی بکە بە نرخی گونجاو 👇\n'+link)}`,cl=`https://wa.me/${WA}?text=${encodeURIComponent('سڵاو کورد ئەجێنسی، من ٥ هاوڕێم بانگێشت کردووە و دەمەوێت هەدیەی سپۆنسەرەکەم وەربگرم.\nکۆدی بانگێشتی من: '+myCode)}`;
+ return `<div class="box"><h2>🎁 ${t('rf1')}</h2><p style="color:var(--mu)">${t('rfd')}</p>
+ <ol class="stp"><li>${t('rs1')}</li><li>${t('rs2')}</li><li>${t('rs3')}</li></ol>
+ <div class="fg"><label>${t('rfc')}</label><div class="code">${myCode}</div></div>
+ <div class="fg"><label>${t('rfl')}</label><input type="text" readonly id="rl" value="${link}" dir="ltr" onclick="this.select()"></div>
+ <div class="row s"><button class="btn" id="cb2" onclick="cpy()">${t('cp')}</button><a class="btn" target="_blank" rel="noopener" href="${sh}">${t('shr')}</a><a class="btn g" target="_blank" rel="noopener" href="${cl}">🎁 ${t('rfClaim')}</a></div><div class="nt">${t('rfn')}</div></div>`}
+function cpy(){const i=$('rl');const ok=()=>{$('cb2').textContent=t('cpd');setTimeout(()=>$('cb2').textContent=t('cp'),1500)};
+ try{navigator.clipboard.writeText(i.value).then(ok,()=>{i.select();document.execCommand('copy');ok()})}catch(e){i.select();document.execCommand('copy');ok()}}
+
+
+function digits(){stop();$('gr').textContent='';let L=4,fin=0,cur='';
+ $('ga').innerHTML='<div class="mq" id="dq"></div><input type="number" inputmode="numeric" id="di" class="mi" disabled><button class="btn" id="db" style="display:none">OK</button>';
+ const up=()=>$('gs').textContent=`${t('g8d')} | 🔢 ${L}`;
+ const rnd=()=>{cur='';for(let i=0;i<L;i++)cur+=i?Math.random()*10|0:1+(Math.random()*9|0);$('dq').textContent=cur;$('di').value='';$('di').disabled=true;$('db').style.display='none';up();window.w=setTimeout(()=>{$('dq').textContent='???';$('di').disabled=false;$('db').style.display='inline-block';$('di').focus()},Math.max(900,L*330))};
+ $('db').onclick=()=>{if(fin)return;if($('di').value===cur){L++;rnd()}else{fin=1;const r=L-1;done(r>=8?(r-7)*3:0)}};
+ rnd()}
+function oddone(){stop();$('gr').textContent='';let ok=0,lv=3,tm=30,fin=0;$('ga').innerHTML='<div class="go" id="go"></div>';
+ const up=()=>$('gs').textContent=`${t('g9d')} | ⏱ ${tm} · ❤ ${lv} · ✔ ${ok}`;
+ const end=()=>{if(fin)return;fin=1;done(ok>=12?Math.floor(ok/3):0)};
+ const nw=()=>{const n=Math.min(7,2+Math.floor(ok/3)),h=Math.random()*360|0,d=Math.max(5,26-ok*1.5),o=Math.random()*n*n|0,g=$('go');
+  g.style.gridTemplateColumns=`repeat(${n},1fr)`;g.innerHTML=Array.from({length:n*n},(_,i)=>`<button class="cd" data-o="${+(i==o)}" style="background:hsl(${h} 65% ${i==o?55+d*.5:55}%)"></button>`).join('');
+  g.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(fin)return;if(b.dataset.o=='1')ok++;else{lv--;if(lv<=0){up();return end()}}up();nw()})};
+ nw();up();window.tmr=setInterval(()=>{tm--;up();if(tm<=0)end()},1000)}
+function timing(){stop();$('gr').textContent='';let h=0,lv=3,fin=0,x=0,dir=1,sp=1.6,zw=22;
+ $('ga').innerHTML='<div class="tb"><i class="tz" id="tz"></i><i class="tk" id="tk"></i></div><button class="btn" id="tbtn" style="min-width:160px">⏹</button>';
+ const zr=()=>20+Math.random()*60;let zc=zr();
+ const draw=()=>{$('tz').style.cssText=`left:${zc-zw/2}%;width:${zw}%`};
+ const up=()=>$('gs').textContent=`${t('g10d')} | ❤ ${lv} · ✔ ${h}`;
+ const end=()=>{if(fin)return;fin=1;done(h>=8?Math.floor(h/2):0)};
+ window.tmr=setInterval(()=>{x+=dir*sp;if(x>=100){x=100;dir=-1}if(x<=0){x=0;dir=1}$('tk').style.left=x+'%'},16);
+ $('tbtn').onclick=()=>{if(fin)return;if(Math.abs(x-zc)<=zw/2){h++;sp=Math.min(4.2,sp+.22);zw=Math.max(5,zw-1.6)}else{lv--;if(lv<=0){up();return end()}}zc=zr();draw();up()};
+ draw();up()}
+let fbStar=5;
+function setStar(n){fbStar=n;document.querySelectorAll('#stars button').forEach(b=>b.classList.toggle('on',+b.dataset.i<=n))}
+function feedback(){const rv=JSON.parse(localStorage.kfb||'[]');
+ return `<div class="box"><h2>💬 ${t('nf')}</h2><div class="fg"><label>${t('fn')}</label><input type="text" id="fbn"></div>
+ <div class="fg"><label>${t('fr')}</label><div class="stars" id="stars">${[1,2,3,4,5].map(i=>`<button onclick="setStar(${i})" data-i="${i}">★</button>`).join('')}</div></div>
+ <div class="fg"><label>${t('ft2')}</label><textarea id="fbt" rows="4"></textarea></div><div class="row s"><button class="btn" onclick="sendFb()">${t('fs')}</button></div></div>
+ ${rv.length?`<div class="box" style="margin-top:12px"><h3>${t('fy')}</h3>${rv.slice().reverse().map(r=>`<div class="qa"><b>${esc(r.n)} <span style="color:#fbbf24">${'★'.repeat(r.s)}${'☆'.repeat(5-r.s)}</span></b>${esc(r.t)}</div>`).join('')}</div>`:''}`}
+function sendFb(){const n=$('fbn').value.trim().slice(0,60),x=$('fbt').value.trim().slice(0,800);if(!n||!x){$('fbn').focus();return}
+ const rv=JSON.parse(localStorage.kfb||'[]');rv.push({n,t:x,s:fbStar});localStorage.kfb=JSON.stringify(rv.slice(-20));
+ openWA(`سڵاو کورد ئەجێنسی، ڕەخنە و پێشنیارم هەیە:\nناو: ${n}\nنرخاندن: ${fbStar}/5\n---------\n${x}`);render()}
+function faq(){return `<div class="box"><h2>❓ ${t('fq')}</h2>${[1,2,3,4].map(i=>`<div class="qa"><b>${t('q'+i)}</b>${t('a'+i)}</div>`).join('')}<div class="nt">${t('fqn')}</div></div>`}
+function vcheck(){return `<div class="box"><h2>🎬 ${t('vcT')}</h2><p style="color:var(--mu);margin-bottom:12px">${t('vcD')}</p>
+ <div class="fg"><label>${t('pf')}</label><select id="vp">${Object.keys(D).map(k=>`<option value="${k}">${t('p_'+k)}</option>`).join('')}</select></div>
+ <div class="fg"><input type="file" id="vf" accept="video/*" onchange="vpick()"></div>
+ <video id="vv" controls playsinline muted style="display:none;width:100%;max-height:260px;border-radius:12px"></video>
+ <div class="row s"><button class="btn" id="vb" onclick="vrun()" disabled>${t('vcGo')}</button></div><div id="vr"></div></div>`}
+function vpick(){const f=$('vf').files[0];if(!f)return;const v=$('vv');v.src=URL.createObjectURL(f);v.style.display='block';$('vb').disabled=false;$('vr').innerHTML=''}
+const seek=(v,p)=>new Promise(r=>{v.onseeked=()=>r();v.currentTime=p;setTimeout(r,4000)});
+async function vrun(){const v=$('vv'),b=$('vb'),r=$('vr');b.disabled=true;r.innerHTML=`<div class="nt">${t('vcBusy')}</div>`;
+ try{if(!isFinite(v.duration)||!v.duration)await new Promise(x=>v.onloadedmetadata=x);
+  const c=document.createElement('canvas'),w=Math.min(640,v.videoWidth),h=Math.round(w*v.videoHeight/v.videoWidth);c.width=w;c.height=h;const x=c.getContext('2d'),fr=[];
+  v.pause();for(let i=0;i<8;i++){await seek(v,Math.min(v.duration-.1,(i+.5)/8*v.duration));x.drawImage(v,0,0,w,h);fr.push(c.toDataURL('image/jpeg',.6).split(',')[1])}
+  const res=await fetch('/api/check-video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:fr,platform:$('vp').value,lang})});
+  const d=await res.json();if(!res.ok||!d.verdict)throw 0;
+  const m={great:['vcGreat','ok'],ok:['vcOk','ok'],rejected:['vcNo','no']}[d.verdict],li=a=>(a||[]).map(z=>`<li>${esc(z)}</li>`).join('');
+  r.innerHTML=`<div class="vres ${m[1]}"><h2>${t(m[0])}</h2><p>${esc(d.summary)}</p>${d.reasons.length?`<h3>${t('vcWhy')}</h3><ul>${li(d.reasons)}</ul>`:''}${d.tips.length?`<h3>${t('vcTip')}</h3><ul>${li(d.tips)}</ul>`:''}</div>`+(d.verdict!='rejected'?`<div class="row s"><button class="btn" onclick="go('c')">${t('vcOrder')}</button></div>`:'')
+ }catch(e){r.innerHTML=`<div class="nt r">${t('vcErr')}</div>`}
+ b.disabled=false}
 /* ---------- Services, Payment & Info ---------- */
 function srv(){return [1,2,3].map(i=>`<div class="sv"><h3>${t('sv'+i)}</h3><p style="color:var(--mu)">${t('sv'+i+'d')}</p><div class="row s"><button class="btn" onclick="window.open('https://wa.me/${WA}?text='+encodeURIComponent('${T['sv'+i][0]}'))">${t('ask')}</button></div></div>`).join('')}
 function payTab(){const c={FIB:'#0d8bd6',FASTPAY:'#e11d48',QCARD:'#f59e0b',ASIAPAY:'#dc2626'};
@@ -318,7 +463,7 @@ function payTab(){const c={FIB:'#0d8bd6',FASTPAY:'#e11d48',QCARD:'#f59e0b',ASIAP
 function info(){const a=(h,n)=>`<a class="btn g" style="text-decoration:none" target="_blank" href="${h}">${n}</a>`;
  return `<div class="box"><h3>${t('ab')}</h3><p>${t('abd')}</p></div>
  <div class="box" style="margin-top:12px"><h3>${t('tc')}</h3><p>${t('tcd')}</p></div>
- <div class="box" style="margin-top:12px"><h3>${t('fq')}</h3><div class="qa"><b>${t('q1')}</b>${t('a1')}</div><div class="qa"><b>${t('q2')}</b>${t('a2')}</div></div>
+ 
  <div class="row s"><button class="btn" onclick="window.open('https://wa.me/${WA}?text='+encodeURIComponent('سڵاو کورد ئەجێنسی، دەمەوێت CVی خۆم بنێرم بۆ داواکاری کار.'))">${t('cv')}</button>
  ${a('https://www.tiktok.com/@kurd.agency','TikTok')}${a('https://www.facebook.com/share/1CAmPqe2Pj/','Facebook')}${a('https://www.instagram.com/aryann.tech','Instagram')}${a('https://snapchat.com/t/54mPJKNh','Snapchat')}</div>
  `}
